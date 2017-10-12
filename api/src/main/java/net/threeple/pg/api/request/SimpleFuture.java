@@ -4,7 +4,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
@@ -32,42 +31,24 @@ public class SimpleFuture<V> implements Future<V> {
 		return c;
     }
 	
-	private Object waitingGet(boolean interruptible) {
-		int spins = -1;
+	private Object waitingGet(boolean interruptible) throws InterruptedException {
 		Object r;
 		 while ((r = result) == null) {
-	            if (spins < 0)
-	                spins = (Runtime.getRuntime().availableProcessors() > 1) ?
-	                    1 << 8 : 0; // Use brief spin-wait on multiprocessors
-	            else if (spins > 0) {
-	                if (ThreadLocalRandom.current().nextLong() >= 0)
-	                    --spins;
-	            } else {
-	            	return waitingGet(true);
-	            }
+	            Thread.sleep(3);
 		 }
 		return r;
 	}
 	
-	private Object timedGet(long nanos) throws TimeoutException {
+	private Object timedGet(long nanos) throws TimeoutException, InterruptedException {
 		if (Thread.interrupted())
             return null;
         if (nanos <= 0L)
             throw new TimeoutException();
         long d = System.nanoTime() + nanos;
         Object r;
-        int spins = -1;
         while ((r = this.result) == null) {
         	if((nanos = d - System.nanoTime()) > 0) {
-        		if (spins < 0)
-	                spins = (Runtime.getRuntime().availableProcessors() > 1) ?
-	                    1 << 8 : 0; // Use brief spin-wait on multiprocessors
-	            else if (spins > 0) {
-	                if (ThreadLocalRandom.current().nextLong() >= 0)
-	                    --spins;
-	            } else {
-	            	return timedGet(nanos);
-	            }
+        		Thread.sleep(3);
         	} else {
         		throw new TimeoutException();
         	}

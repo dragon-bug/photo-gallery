@@ -80,10 +80,10 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 			if (this.queue.size() > this.busyThreshold.get()) {
 				logger.info("工作太忙,添个人帮忙...");
 				this.busyThreshold.getAndAdd(STEP);
-				this.executor.execute(new PhotoPorter(this));
+				this.executor.execute(new Porter(this));
 			}
 		} else {
-			this.executor.execute(new PhotoPorter(this));
+			this.executor.execute(new Porter(this));
 			this.work.compareAndSet(false, true);
 		}
 	}

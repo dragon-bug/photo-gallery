@@ -65,6 +65,7 @@ project(':api') {
 		api project(':shared')
 
 		testImplementation project(':psd')
+		testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.10'
 	}
 }
 

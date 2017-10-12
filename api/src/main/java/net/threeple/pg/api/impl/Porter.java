@@ -27,15 +27,15 @@ import net.threeple.pg.api.request.SimpleFuture;
 import net.threeple.pg.shared.message.AbstractUriMessageHandler;
 import net.threeple.pg.shared.util.PlacementCalculator;
 
-public class PhotoPorter implements Runnable {
-	final Logger logger = LoggerFactory.getLogger(PhotoPorter.class);
+public class Porter implements Runnable {
+	final Logger logger = LoggerFactory.getLogger(Porter.class);
 	private final static int POLL_TIMEOUT = 100;
 	private BlockingQueue<Request> queue;
 	private AsyncPhotoStorage photoStorage;
 	private static AtomicInteger instanceCounter = new AtomicInteger();
 	private int id;
 	
-	public PhotoPorter(AsyncPhotoStorage _photoStorage) {
+	public Porter(AsyncPhotoStorage _photoStorage) {
 		this.photoStorage = _photoStorage;
 		this.queue = _photoStorage.getQueue();
 		this.id = instanceCounter.getAndIncrement();
@@ -96,12 +96,13 @@ public class PhotoPorter implements Runnable {
 					}
 				}
 				quntity++;
+				logger.debug("搬运工#{}完成第{}个任务", this.id, quntity);
 			} // end while
 			
 		} catch (InterruptedException e) {
 			logger.error("搬运工#{}的工作被中断,错误代码:{}", this.id, e.getMessage());
 		} finally {
-			logger.info("搬运工#{}结束此次工作, 完成任务{}个, 耗时{}毫秒", this.id, quntity, (System.currentTimeMillis() - start));
+			logger.info("搬运工#{}结束此次工作, 完成任务{}个, 耗时{}毫秒", this.id, quntity, (System.currentTimeMillis() - start - POLL_TIMEOUT));
 			this.photoStorage.free();
 		}
 	}

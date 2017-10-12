@@ -1,9 +1,10 @@
-package net.threeple.pg.api;
+package net.threeple.pg.api.factory;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
 
+import net.threeple.pg.api.AsyncUploader;
 import net.threeple.pg.api.factory.PhotoStorageFactory;
 
 public class PhotoStorageFactoryTest {
@@ -11,6 +12,6 @@ public class PhotoStorageFactoryTest {
 	@Test
 	public void testCreat() {
 		AsyncUploader uploader = PhotoStorageFactory.getPhotoStorage(false);
-		assertFalse(uploader == null);
+		assertNotNull(uploader);
 	}
 }

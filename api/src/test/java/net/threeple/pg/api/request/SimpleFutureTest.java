@@ -1,16 +1,19 @@
 package net.threeple.pg.api.request;
 
-import java.util.concurrent.ExecutionException;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Before;
 import org.junit.Test;
 
 public class SimpleFutureTest {
+	private SimpleFuture<Integer> future = new SimpleFuture<>();
 	
-	@Test
-	public void test() throws InterruptedException, ExecutionException, TimeoutException {
-		SimpleFuture<Integer> future = new SimpleFuture<>();
+	@Before
+	public void prepare() {
 		Thread thread = new Thread(new Runnable() {
 
 			@Override
@@ -18,17 +21,29 @@ public class SimpleFutureTest {
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				boolean com = future.complete(1);
-				System.out.println("complete:" + com);
+				assertTrue("赋值失败", com);
 			}
 			
 		}, "Test-simplefuture-thread-1");
 		thread.start();
-		/*future.cancel(true);
-		System.out.println("r:" + future.get(15, TimeUnit.MILLISECONDS));*/
-		System.out.println("r:" + future.get());
 	}
+	
+	@Test
+	public void testGet() throws Exception {
+		assertSame("未得到正确的值", Integer.valueOf(1), future.get());
+	}
+	
+	@Test
+	public void testTimeoutGet() throws Exception {
+		assertSame("超时仍未得到正确的值", Integer.valueOf(1), future.get(15, TimeUnit.MILLISECONDS));
+	}
+	
+	@Test(expected=TimeoutException.class)
+	public void testTimeout() throws Exception {
+		future.get(5, TimeUnit.MILLISECONDS);
+	}
+	
 }

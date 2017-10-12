@@ -2,6 +2,7 @@ package net.threeple.pg.api;
 
 import net.threeple.pg.psd.PsdServer;
 import net.threeple.pg.psd.Storage;
+import net.threeple.pg.shared.util.FileUtils;
 
 public class SimplePsdServer {
 	public static void start() throws Exception {
@@ -13,7 +14,7 @@ public class SimplePsdServer {
 
 				@Override
 				public void run() {
-					Storage storage = new Storage(id, "D:\\psds\\psd" + id);
+					Storage storage = new Storage(id, FileUtils.joinPath(SimplePsdServer.getStoragePath(), "\\psd" + id));
 					
 					PsdServer server = new PsdServer(storage);
 					server.startup(port + id);
@@ -25,5 +26,9 @@ public class SimplePsdServer {
 			thread.start();
 		}
 		Thread.sleep(300);
+	}
+	
+	public static String getStoragePath() {
+		return System.getenv("PSD_HOME");
 	}
 }
