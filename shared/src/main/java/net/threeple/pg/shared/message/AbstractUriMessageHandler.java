@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractUriMessageHandler extends AbstractMessageHandler {
+public abstract class AbstractUriMessageHandler extends AbstractByteMessageHandler implements MessageSender, MessageReceiver {
 	final Logger logger = LoggerFactory.getLogger(AbstractUriMessageHandler.class);
 	protected String uri;
 	private Charset utf8 = StandardCharsets.UTF_8;

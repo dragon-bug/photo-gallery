@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import net.threeple.pg.api.request.Request;
 import net.threeple.pg.api.request.SimpleFuture;
 import net.threeple.pg.shared.message.AbstractUriMessageHandler;
+import net.threeple.pg.shared.message.MessageReceiver;
+import net.threeple.pg.shared.message.MessageSender;
 import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class Porter implements Runnable {
@@ -45,8 +47,8 @@ public class Porter implements Runnable {
 	@Override
 	public void run() {
 		Request request = null;
-		PhotoUploadHandler uploadHandler = null;
-		PhotoDownloadHandler downloadHandler = null;
+		MessageReceiver downloader = null;
+		MessageSender uploader = null;
 		Synchronizer synchronizer = Synchronizer.getInstance();
 
 		long start = System.currentTimeMillis();
@@ -66,16 +68,16 @@ public class Porter implements Runnable {
 					socket.connect(address, 1000 * 5);
 
 					if (request.getBody() == null) {
-						downloadHandler = new PhotoDownloadHandler(socket, uri);
-						downloadHandler.download();
-						byte[] body = downloadHandler.getBody();
+						downloader = new PhotoDownloadHandler(socket, uri);
+						downloader.receive();;
+						byte[] body = ((PhotoDownloadHandler)downloader).getBody();
 						@SuppressWarnings("unchecked")
 						SimpleFuture<byte[]> future = (SimpleFuture<byte[]>) request.getFuture();
 						future.complete(body);
 					} else { // 上传
 						download = false;
-						uploadHandler = new PhotoUploadHandler(socket, uri, request.getBody());
-						uploadHandler.upload();
+						uploader = new PhotoUploadHandler(socket, uri, request.getBody());
+						uploader.send();
 						@SuppressWarnings("unchecked")
 						SimpleFuture<Integer> future = (SimpleFuture<Integer>) request.getFuture();
 						future.complete(0);
@@ -108,10 +110,9 @@ public class Porter implements Runnable {
 	}
 	
 	private class PhotoUploadHandler extends AbstractUriMessageHandler {
-		final Logger logger = LoggerFactory.getLogger(PhotoUploadHandler.class);
 		private byte[] body;
 		
-		public PhotoUploadHandler(Socket _socket, String _uri, byte[] _body) throws IOException {
+		private PhotoUploadHandler(Socket _socket, String _uri, byte[] _body) throws IOException {
 			InputStream _in = _socket.getInputStream();
 			this.pbin = new PushbackInputStream(new BufferedInputStream(_in));
 			this.in = new DataInputStream(this.pbin);
@@ -121,7 +122,10 @@ public class Porter implements Runnable {
 			this.body = _body;
 		}
 		
-		public void upload() throws IOException {
+		
+		
+		@Override
+		public void send() throws IOException {
 			this.out.write(UPLOAD);
 			super.send();
 			int length = this.body.length;
@@ -143,7 +147,7 @@ public class Porter implements Runnable {
 	private class PhotoDownloadHandler extends AbstractUriMessageHandler {
 		private byte[] body;
 		
-		public PhotoDownloadHandler(Socket _socket, String _uri) throws IOException {
+		private PhotoDownloadHandler(Socket _socket, String _uri) throws IOException {
 			InputStream _in = _socket.getInputStream();
 			this.pbin = new PushbackInputStream(new BufferedInputStream(_in));
 			this.in = new DataInputStream(this.pbin);
@@ -156,7 +160,8 @@ public class Porter implements Runnable {
 			return this.body;
 		}
 		
-		public void download() throws IOException {
+		@Override
+		public void receive() throws IOException {
 			this.out.write(DOWNLOAD);
 			super.send();
 			
@@ -174,6 +179,8 @@ public class Porter implements Runnable {
 			this.body = _body;
 			logger.debug("搬运工#{}下载文件{}成功, 共下载{}字节", id, this.uri, this.body.length);
 		}
+
+		
 	}
 
 }

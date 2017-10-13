@@ -78,7 +78,7 @@ public class AsyncUploadTest {
 		logger.debug("共上传{}个文件", pictures.length);
 		
 		String ud = ComparsionUtils.digest(filenames[chid]);
-		logger.debug("随机文件{}进行摘要,摘要码:{},上传后的摘要码为:{}", filenames[chid], od, ud);
+		logger.debug("随机对文件{}进行摘要,摘要码:{},上传后的摘要码为:{}", filenames[chid], od, ud);
 		
 		assertEquals("原文件的摘要与上传后的文件摘要不一致", od, ud);
 		
