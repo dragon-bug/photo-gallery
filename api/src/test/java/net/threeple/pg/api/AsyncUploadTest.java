@@ -18,22 +18,27 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.factory.PhotoStorageFactory;
 import net.threeple.pg.api.impl.AsyncPhotoStorage;
+import net.threeple.pg.api.impl.SimpleClusterViewMonitor;
 import net.threeple.pg.shared.util.FileUtils;
 import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class AsyncUploadTest {
 	final Logger logger = LoggerFactory.getLogger(AsyncUploadTest.class);
 	private String path;
+	private AsyncUploader uploader;
 	
 	@Before
 	public void parpare() throws Exception {
+		SimpleClusterViewMonitor.start();
+		SimplePsdServer.start();
+		
+		this.uploader = PhotoStorageFactory.getPhotoStorage(false);
+		
 		File home = new File(SimplePsdServer.getStoragePath());
 		File[] psds = home.listFiles();
 		for(File psd : psds) {
 			FileUtils.emptyDir(psd);
 		}
-		
-		SimplePsdServer.start();
 		
 		Calendar cal = Calendar.getInstance();
 		String year = String.valueOf(cal.get(Calendar.YEAR));
@@ -45,7 +50,6 @@ public class AsyncUploadTest {
 	
 	@Test
 	public void testUpload() throws Exception {
-		AsyncUploader uploader = PhotoStorageFactory.getPhotoStorage(false);
 		
 		File[] pictures = getPictures();
 		String[] filenames = new String[pictures.length];

@@ -16,15 +16,20 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.factory.PhotoStorageFactory;
 import net.threeple.pg.api.impl.AsyncPhotoStorage;
+import net.threeple.pg.api.impl.SimpleClusterViewMonitor;
 
 public class AsyncDownloadTest {
 	final Logger logger = LoggerFactory.getLogger(AsyncDownloadTest.class);
 	private List<String> filenames = new ArrayList<>();
 	private String year;
+	private AsyncDownloader downloader;
 	
 	@Before
 	public void prepare() throws Exception {
+		SimpleClusterViewMonitor.start();
 		SimplePsdServer.start();
+		
+		this.downloader = PhotoStorageFactory.getPhotoStorage(false);
 		
 		Calendar cal = Calendar.getInstance();
 		this.year = String.valueOf(cal.get(Calendar.YEAR));
@@ -33,9 +38,7 @@ public class AsyncDownloadTest {
 		for(File psd : home.listFiles()) {
 			listFiles(psd);
 		}
-		for(String name : filenames) {
-			System.out.println(name);
-		}
+		
 	}
 	
 	public void listFiles(File file) throws Exception {
@@ -53,7 +56,7 @@ public class AsyncDownloadTest {
 	
 	@Test
 	public void testDownload() throws Exception {
-		AsyncDownloader downloader = PhotoStorageFactory.getPhotoStorage(false);
+		
 		List<Future<byte[]>> rs = new ArrayList<>();
 		Random random = new Random();
 		for(String filename : filenames) {

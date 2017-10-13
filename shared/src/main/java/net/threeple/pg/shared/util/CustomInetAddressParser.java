@@ -13,7 +13,7 @@ public class CustomInetAddressParser {
 		InetSocketAddress inetSocketAddr = null;
 		try {
 			inetAddr = InetAddress.getByName(host);
-			new InetSocketAddress(inetAddr, port);
+			inetSocketAddr = new InetSocketAddress(inetAddr, port);
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.threeple.pg.api.exception.ClusterUnhealthyException;
 import net.threeple.pg.api.request.Request;
 import net.threeple.pg.api.request.SimpleFuture;
 import net.threeple.pg.shared.message.AbstractUriMessageHandler;
@@ -49,7 +50,7 @@ public class Porter implements Runnable {
 		Request request = null;
 		MessageReceiver downloader = null;
 		MessageSender uploader = null;
-		Synchronizer synchronizer = Synchronizer.getInstance();
+		ClusterViewService clusterView = ClusterViewService.getInstance();
 
 		long start = System.currentTimeMillis();
 		int quntity = 0;
@@ -64,7 +65,7 @@ public class Porter implements Runnable {
 				try {
 
 					int placement = PlacementCalculator.calculate(uri);
-					InetSocketAddress address = synchronizer.getAddress(placement);
+					InetSocketAddress address = clusterView.getPsdAddress(placement);
 					socket.connect(address, 1000 * 5);
 
 					if (request.getBody() == null) {
@@ -83,13 +84,17 @@ public class Porter implements Runnable {
 						future.complete(0);
 						
 					}
-				} catch (Exception e) {
+				} catch (IOException e) {
 					logger.error("未完成{}的传输工作, 错误信息:{}", uri, e.getMessage());
+					clusterView.repair();
 					if(!download) {
 						request.setBody(null);
 					}
 					this.queue.offer(request, 1, TimeUnit.SECONDS);
 					logger.info("已重新安排{}的传输工作", uri);
+				} catch (ClusterUnhealthyException e) {
+					logger.error("存储集群异常,暂停5秒等待集群恢复,异常信息:{}", e.getMessage());
+					Thread.sleep(1000 * 5);
 				} finally {
 					try {
 						socket.close();
