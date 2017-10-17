@@ -129,21 +129,17 @@ public class Client implements Observer, Runnable {
 		}
 		
 		private void sendPlacementGroups() throws IOException {
-			int pgs = Client.this.cluterView.getPgTotal();
-			this.writer.write("pgs=" + pgs);
+			PlacementGroup[] pgs = Client.this.cluterView.getPgs();
+			this.writer.write("pgs=" + pgs.length);
 			this.writer.newLine();
-			PsdNode[] nodes = Client.this.cluterView.getPsdNodes();
-			for(int i = 0; i < nodes.length; i++) {
-				PsdNode node = nodes[i];
-				for(PlacementGroup pg : node.getPlacementGroups()) {
-					StringBuilder sb = new StringBuilder();
-					sb.append(pg.getId());
-					sb.append('=');
-					sb.append(node.getId());
-					this.writer.write(sb.toString());
-					this.writer.newLine();
-					logger.debug("写入归置组信息: {}", sb.toString());
-				}
+			for(PlacementGroup pg : pgs) {
+				StringBuilder sb = new StringBuilder();
+				sb.append(pg.getId());
+				sb.append('=');
+				sb.append(pg.getPlacement());
+				this.writer.write(sb.toString());
+				this.writer.newLine();
+				logger.debug("写入归置组信息: {}", sb.toString());
 			}
 			this.writer.flush();
 		}

@@ -2,22 +2,19 @@ package net.threeple.pg.mon;
 
 public class PlacementGroup {
 	private final int id;
-	private PsdNode psd;
+	private int placement;
 	
-	public PlacementGroup(int _id) {
+	public PlacementGroup(int _id, int _placement) {
 		this.id = _id;
+		this.placement = _placement;
 	}
 
 	public int getId() {
 		return id;
 	}
 
-	public PsdNode getPsd() {
-		return psd;
+	public int getPlacement() {
+		return placement;
 	}
 
-	public void setPsd(PsdNode psd) {
-		this.psd = psd;
-	}
-	
 }
