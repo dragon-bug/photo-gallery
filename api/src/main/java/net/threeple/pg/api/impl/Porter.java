@@ -50,7 +50,7 @@ public class Porter implements Runnable {
 		Request request = null;
 		MessageReceiver downloader = null;
 		MessageSender uploader = null;
-		ClusterViewService clusterView = ClusterViewService.getInstance();
+		ClusterViewKeeper cvKeeper = ClusterViewKeeper.getInstance();
 
 		long start = System.currentTimeMillis();
 		int quntity = 0;
@@ -65,7 +65,7 @@ public class Porter implements Runnable {
 				try {
 
 					int placement = PlacementCalculator.calculate(uri);
-					InetSocketAddress address = clusterView.getPsdAddress(placement);
+					InetSocketAddress address = cvKeeper.getPsdAddress(placement);
 					socket.connect(address, 1000 * 5);
 
 					if (request.getBody() == null) {
@@ -86,7 +86,7 @@ public class Porter implements Runnable {
 					}
 				} catch (IOException e) {
 					logger.error("未完成{}的传输工作, 错误信息:{}", uri, e.getMessage());
-					clusterView.repair();
+					cvKeeper.repair();
 					if(!download) {
 						request.setBody(null);
 					}

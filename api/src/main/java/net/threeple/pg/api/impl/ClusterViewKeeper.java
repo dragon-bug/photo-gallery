@@ -18,38 +18,30 @@ import net.threeple.pg.shared.message.AbstractCharMessageHandler;
 import net.threeple.pg.shared.message.MessageReceiver;
 import net.threeple.pg.shared.util.CustomInetAddressParser;
 
-public class ClusterViewService implements Runnable {
-	final Logger logger = LoggerFactory.getLogger(ClusterViewService.class);
+public class ClusterViewKeeper implements Runnable {
+	final Logger logger = LoggerFactory.getLogger(ClusterViewKeeper.class);
 	private InetSocketAddress[] addresses;
 	private int[] pgs;
-	private static ClusterViewService instance;
+	private static ClusterViewKeeper instance;
 	private String monitorAddrs;
 	private int port;
 	private AtomicBoolean initiated = new AtomicBoolean(false);
 	
 	static {
-		instance = new ClusterViewService();
+		instance = new ClusterViewKeeper();
 	}
 	
-	private ClusterViewService() {
+	private ClusterViewKeeper() {
 		this.monitorAddrs = System.getenv("PG_MONITORS");
 		Thread thread = new Thread(this, "Photo-Gallery-Synchronizer-Thread");
 		thread.setDaemon(true);
 		thread.start();
 	}
 	
-	public synchronized static ClusterViewService getInstance() {
+	public synchronized static ClusterViewKeeper getInstance() {
 		return instance;
 	}
 	
-	public String getMonitorAddrs() {
-		return monitorAddrs;
-	}
-
-	public void setMonitorAddrs(String monitorAddrs) {
-		this.monitorAddrs = monitorAddrs;
-	}
-
 	public InetSocketAddress getPsdAddress(int placement) throws InterruptedException, ClusterUnhealthyException {
 		int count = 0;
 		while(!initiated.get()) {
@@ -148,7 +140,7 @@ public class ClusterViewService implements Runnable {
 		@Override
 		public void receive() throws IOException {
 			String line = this.reader.readLine();
-			ClusterViewService.this.logger.info("集群视图发生变更,变更版本:{}", line);
+			ClusterViewKeeper.this.logger.info("集群视图发生变更,变更版本:{}", line);
 			super.receive();
 		}
 		
@@ -179,14 +171,14 @@ public class ClusterViewService implements Runnable {
 			int eq = line.indexOf('=');
 			if(eq > 0 && "psds".equals(line.substring(0, eq))) {
 				int size = Integer.parseInt(line.substring(eq + 1, line.length()));
-				ClusterViewService.this.addresses = new InetSocketAddress[size];
+				ClusterViewKeeper.this.addresses = new InetSocketAddress[size];
 				for(int i = 0; i < size; i++) {
 					line = this.reader.readLine();
 					eq = line.indexOf('=');
 					int psdId = Integer.parseInt(line.substring(0, eq));
 					String address = line.substring(eq + 1, line.length());
-					ClusterViewService.this.addresses[psdId] = CustomInetAddressParser.parse(address);
-					ClusterViewService.this.logger.debug("获得存储节点#{}的地址:{}", psdId, address);
+					ClusterViewKeeper.this.addresses[psdId] = CustomInetAddressParser.parse(address);
+					ClusterViewKeeper.this.logger.debug("获得存储节点#{}的地址:{}", psdId, address);
 				}
 			}
 		}
@@ -196,21 +188,21 @@ public class ClusterViewService implements Runnable {
 			int eq = line.indexOf('=');
 			if(eq > 0 && "pgs".equals(line.substring(0, eq))) {
 				int size = Integer.parseInt(line.substring(eq + 1, line.length()));
-				ClusterViewService.this.pgs = new int[size];
+				ClusterViewKeeper.this.pgs = new int[size];
 				for(int i = 0; i < size; i++) {
 					line = this.reader.readLine();
 					eq = line.indexOf('=');
 					int pgId = Integer.parseInt(line.substring(0, eq));
 					int psdId = Integer.parseInt(line.substring(eq + 1, line.length()));
-					ClusterViewService.this.pgs[pgId] = psdId;
-					ClusterViewService.this.logger.debug("获得归置组#{}的归置信息:存储节点#{}", pgId, psdId);
+					ClusterViewKeeper.this.pgs[pgId] = psdId;
+					ClusterViewKeeper.this.logger.debug("获得归置组#{}的归置信息:存储节点#{}", pgId, psdId);
 				}
 			}
 			
 		}
 		
 		private void register() throws IOException {
-			this.writer.write("register=" + ClusterViewService.this.port);
+			this.writer.write("register=" + ClusterViewKeeper.this.port);
 			this.writer.newLine();
 			this.writer.flush();
 		}
