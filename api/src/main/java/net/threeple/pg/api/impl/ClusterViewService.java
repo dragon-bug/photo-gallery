@@ -33,6 +33,9 @@ public class ClusterViewService implements Runnable {
 	
 	private ClusterViewService() {
 		this.monitorAddrs = System.getenv("PG_MONITORS");
+		Thread thread = new Thread(this, "Photo-Gallery-Synchronizer-Thread");
+		thread.setDaemon(true);
+		thread.start();
 	}
 	
 	public synchronized static ClusterViewService getInstance() {
@@ -48,9 +51,14 @@ public class ClusterViewService implements Runnable {
 	}
 
 	public InetSocketAddress getPsdAddress(int placement) throws InterruptedException, ClusterUnhealthyException {
+		int count = 0;
 		while(!initiated.get()) {
-			logger.info("同步器未完成初始化,等待3秒后再测试");
-			Thread.sleep(1000 * 3);
+			if(count > 300) {
+				throw new ClusterUnhealthyException("不能正确初始化集群视图");
+			}
+			logger.info("同步器未完成初始化,等待10毫秒后再测试");
+			Thread.sleep(10 * 1);
+			count++;
 		}
 		
 		int psdId = pgs[placement];

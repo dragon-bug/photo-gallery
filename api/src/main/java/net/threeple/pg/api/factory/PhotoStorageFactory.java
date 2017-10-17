@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.PhotoStorage;
 import net.threeple.pg.api.impl.AsyncPhotoStorage;
-import net.threeple.pg.api.impl.ClusterViewService;
 
 public class PhotoStorageFactory {
 	final static Logger logger = LoggerFactory.getLogger(PhotoStorageFactory.class);
@@ -19,10 +18,6 @@ public class PhotoStorageFactory {
 			Constructor<?> constructor = cl.getDeclaredConstructor();
 			constructor.setAccessible(true);
 			photoStorage = (AsyncPhotoStorage)constructor.newInstance();
-			
-			Thread thread = new Thread(ClusterViewService.getInstance(), "Photo-Gallery-Synchronizer-Thread");
-			thread.setDaemon(true);
-			thread.start();
 		} catch (Exception e) {
 			logger.error("无法实例化PhotoStorage");
 		}
