@@ -6,8 +6,8 @@
  * user guide available at https://docs.gradle.org/4.0/userguide/java_library_plugin.html
  */
  allprojects {
- 	group "net.threeple.gallery"
- 	version "0.1"
+ 	group "net.threeple.pg"
+ 	version "0.4"
  }
 
 subprojects{
@@ -61,8 +61,30 @@ subprojects{
 }
 
 project(':api') {
+	apply plugin: 'maven-publish'
+
+	publishing {
+		repositories {
+	        maven {
+	            // change to point to your repo, e.g. http://my.org/repo
+	            url "http://nexus.local:8081/repository/maven-snapshots/"
+	            credentials {
+		            username = "${nexusUser}"
+		            password = "${nexusPassword}"
+		        }
+	        }
+	    }
+
+	    publications {
+	        maven(MavenPublication) {
+	            artifactId "$rootProject.name-$project.name"
+				version "$project.version-SNAPSHOT"
+	            from components.java
+	        }
+	    }
+	}
 	dependencies {
-		api project(':shared')
+		implementation project(':shared')
 
 		testImplementation project(':psd')
 		testImplementation project(':mon')
@@ -71,14 +93,34 @@ project(':api') {
 }
 
 project(':mon') {
+	apply plugin: 'application'
+
+	mainClassName = "net.threeple.pg.mon.Bootstrap"
+
+	distributions {
+		main {
+			baseName = "$rootProject.name-$project.name"
+		}
+	}
+
 	dependencies {
-		api project(':shared')
+		implementation project(':shared')
 	}
 }
 
 project(':psd') {
+	apply plugin: 'application'
+
+	mainClassName = "net.threeple.pg.psd.Bootstrap"
+
+	distributions {
+		main {
+			baseName = "$rootProject.name-$project.name"
+		}
+	}
+
 	dependencies {
-		api project(':shared')
+		implementation project(':shared')
 
 		testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.10'
 	}

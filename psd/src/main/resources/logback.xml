@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="false" scanPeriod="30 seconds"> 
+  <property name="Log_Dir" value="/var/log/photo-gallery/" />
+  <property name="App_Name" value="photo-gallery-psd" />
+  
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender"> 
+    <!-- encoders are  by default assigned the type
+         ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
+    <encoder>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss} [%level] - %m%n</pattern>
+    </encoder>
+  </appender>
+  
+  <!-- 按日期区分的滚动日志 -->
+  <appender name="APP" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>${Log_Dir}${App_Name}-app.log</file>
+      
+    <encoder>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss} [%class:%line] - %m%n</pattern>
+    </encoder>
+      
+      <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>INFO</level>
+    </filter>
+      
+      <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- daily rollover -->
+      <fileNamePattern>${Log_Dir}${App_Name}-app.%d{yyyy-MM-dd}.log</fileNamePattern>
+
+      <!-- keep 30 days' worth of history -->
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+  </appender>
+  
+  
+  <!-- 按日期和大小区分的滚动日志 -->
+  <appender name="DEBUG-OUT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>${Log_Dir}${App_Name}-debug.log</file>
+
+    <encoder>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss} [%class:%line] - %m%n</pattern>
+    </encoder>
+      
+      <filter class="ch.qos.logback.classic.filter.LevelFilter">
+      <level>DEBUG</level>
+      <onMatch>ACCEPT</onMatch>
+      <onMismatch>DENY</onMismatch>
+    </filter>
+      
+      <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- rollover daily -->
+      <fileNamePattern>${Log_Dir}${App_Name}-debug-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+      
+      <timeBasedFileNamingAndTriggeringPolicy
+            class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+        <!-- or whenever the file size reaches 100MB -->
+        <maxFileSize>30MB</maxFileSize>
+        
+      </timeBasedFileNamingAndTriggeringPolicy>
+    </rollingPolicy>
+    
+  </appender>
+  
+  
+  <root level="info">
+    <appender-ref ref="STDOUT" />
+    <appender-ref ref="APP" />
+    <appender-ref ref="DEBUG-OUT" />
+  </root>
+</configuration>

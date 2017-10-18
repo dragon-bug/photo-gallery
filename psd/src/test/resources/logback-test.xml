@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 	<property name="Log_Dir" value="D:\\log\\" />
-	<property name="App_Name" value="photo-gallery-api" />
+	<property name="App_Name" value="photo-gallery-psd" />
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<!-- encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder 
 			by default -->

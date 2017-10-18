@@ -4,6 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.net.URL;
+import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -29,8 +32,15 @@ public class AsyncUploadAndDownloadTest {
 	
 	@Before
 	public void prepare() throws Exception {
-		SimpleClusterViewMonitor.start();
-		SimplePsdServer.start();
+		URL url = this.getClass().getClassLoader().getResource("test.properties");
+		Properties prpe = new Properties();
+		prpe.load(new FileInputStream(url.getPath()));
+		
+		String server = prpe.getProperty("server");
+		if("inner".equals(server)) {
+			SimpleClusterViewMonitor.start();
+			SimplePsdServer.start();
+		}
 		
 		this.uploader = PhotoStorageFactory.getPhotoStorage(false);
 		this.downloader = PhotoStorageFactory.getPhotoStorage(false);

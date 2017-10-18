@@ -3,6 +3,9 @@ package net.threeple.pg.api;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.net.URL;
+import java.util.Properties;
 import java.util.Random;
 
 import org.junit.Before;
@@ -22,8 +25,15 @@ public class AsyncUploadTest {
 	
 	@Before
 	public void parpare() throws Exception {
-		SimpleClusterViewMonitor.start();
-		SimplePsdServer.start();
+		URL url = this.getClass().getClassLoader().getResource("test.properties");
+		Properties prpe = new Properties();
+		prpe.load(new FileInputStream(url.getPath()));
+		
+		String server = prpe.getProperty("server");
+		if("inner".equals(server)) {
+			SimpleClusterViewMonitor.start();
+			SimplePsdServer.start();
+		}
 		
 		this.uploader = PhotoStorageFactory.getPhotoStorage(false);
 		

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.StringJoiner;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -20,7 +21,10 @@ public class UploadUtils {
 		String year = String.valueOf(cal.get(Calendar.YEAR));
 		String month = String.valueOf(cal.get(Calendar.MONTH) + 1);
 		String day = String.valueOf(cal.get(Calendar.DATE));
-		path = FileUtils.joinPath(year, month, day);
+		StringJoiner joiner = new StringJoiner("/");
+		joiner.add(year).add(month).add(day);
+		path = "/" + joiner.toString();
+//		path = FileUtils.joinPath(year, month, day);
 	}
 	
 	public static void emptyUploadDir() throws IOException {
@@ -48,7 +52,10 @@ public class UploadUtils {
 	public static String createUri(String filename) {
 		String ext = filename.substring(filename.lastIndexOf('.'), filename.length());
 		UUID uuid = UUID.randomUUID();
-		String uri = FileUtils.joinPath(path, uuid.toString() + ext);
+		StringJoiner joiner = new StringJoiner("/");
+		joiner.add(path).add(uuid.toString() + ext);
+//		String uri = FileUtils.joinPath(path, uuid.toString() + ext);
+		String uri = joiner.toString();
 		logger.debug("本地文件{}改名为{}", filename, uri);
 		return uri;
 	}

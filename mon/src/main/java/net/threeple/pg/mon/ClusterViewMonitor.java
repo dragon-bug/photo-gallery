@@ -1,16 +1,16 @@
 package net.threeple.pg.mon;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,6 +36,10 @@ public class ClusterViewMonitor extends Observable implements Observer, Runnable
 
 	@Override
 	public void run() {
+		start();
+	}
+	
+	public void start() {
 		ServerSocket server = null;
 		try {
 			server = new ServerSocket(this.port);
@@ -108,29 +112,21 @@ public class ClusterViewMonitor extends Observable implements Observer, Runnable
 			for(File psdDir : psdDirs) {
 				int id = Integer.parseInt(psdDir.getName());
 				File config = new File(FileUtils.joinPath(psdDir.getAbsolutePath(), "config"));
-				BufferedReader reader = null;
+				Properties prope = new Properties();
 				try {
-					reader = new BufferedReader(new FileReader(config));
-					String line = reader.readLine();
-					int eqi = line.indexOf('=');
-					String sa = line.substring(eqi + 1, line.length());
-					int colon = sa.indexOf(':');
-					InetAddress address = InetAddress.getByName(sa.substring(0, colon));
-					int port = Integer.parseInt(sa.substring(colon + 1, sa.length()));
-					logger.debug("成功读取存储节点#{}的配置信息: 地址={}, 端口={}", id, address.getHostAddress(), port);
-					PsdNode psd = new PsdNode(id, address, port);
+					prope.load(new FileInputStream(config));
+					String address = prope.getProperty("address");
+					int colon = address.indexOf(':');
+					InetAddress iaddress = InetAddress.getByName(address.substring(0, colon));
+					int port = Integer.parseInt(address.substring(colon + 1, address.length()));
+					logger.debug("成功读取存储节点#{}的配置信息: 地址={}, 端口={}", id, iaddress.getHostAddress(), port);
+					PsdNode psd = new PsdNode(id, iaddress, port);
 					logger.debug("成功创建存储节点#{}", id);
 					psdNodes[id] = psd;
-				} catch (FileNotFoundException e) {
-					logger.error("丢失存储节点#{}的配置文件,错误信息:{}", id, e.getMessage());
-				} catch (IOException e) {
-					logger.error("无法读取存储节点#{}的配置文件,错误信息:{}", id, e.getMessage());
-				} finally {
-					try {
-						reader.close();
-					} catch (IOException e) {
-						logger.warn("存储节点#{}配置文件读取器关闭失败,失败信息:{}", id, e.getMessage());
-					}
+				} catch (FileNotFoundException e1) {
+					logger.error("丢失存储节点#{}的配置文件,错误信息:{}", id, e1.getMessage());
+				} catch (IOException e1) {
+					logger.error("无法读取存储节点#{}的配置文件,错误信息:{}", id, e1.getMessage());
 				}
 			}
 		}
@@ -149,25 +145,16 @@ public class ClusterViewMonitor extends Observable implements Observer, Runnable
 			for(File pgDir : pgDirs) {
 				int id = Integer.parseInt(pgDir.getName());
 				File current = new File(FileUtils.joinPath(pgDir.getAbsolutePath(), "current"));
-				BufferedReader reader = null;
+				
+				Properties prope = new Properties();
 				try {
-					reader = new BufferedReader(new FileReader(current));
-					String line = reader.readLine();
-					int eqi = line.indexOf('=');
-					int placement = Integer.parseInt(line.substring(eqi + 1, line.length()));
+					prope.load(new FileInputStream(current));
+					int placement = Integer.parseInt(prope.getProperty("psd"));
 					PlacementGroup pg = new PlacementGroup(id, placement);
 					logger.debug("成功创建归置组#{}, 存储位置:{}", id, placement);
 					pgs[id] = pg;
-				} catch (FileNotFoundException e) {
-					logger.error("丢失归置组#{}的配置文件,错误信息:{}", id, e.getMessage());
-				} catch (IOException e) {
-					logger.error("无法读取归置组#{}的配置文件,错误信息:{}", id, e.getMessage());
-				} finally {
-					try {
-						reader.close();
-					} catch (IOException e) {
-						logger.warn("归置组#{}配置文件读取器关闭失败,失败信息:{}", id, e.getMessage());
-					}
+				} catch (IOException e1) {
+					logger.error("无法读取归置组#{}的配置文件,错误信息:{}", id, e1.getMessage());
 				}
 			}
 		}

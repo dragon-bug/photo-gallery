@@ -44,15 +44,4 @@ public class PsdServer {
 		}
 	}
 	
-	public static void main(String[] args) {
-		int id = Integer.parseInt(args[0]);
-		int port = Integer.parseInt(args[1]);
-		String root = args[2];
-		
-		Storage storage = new Storage(id, root);
-		
-		PsdServer server = new PsdServer(storage);
-		server.startup(port);
-	}
-
 }
