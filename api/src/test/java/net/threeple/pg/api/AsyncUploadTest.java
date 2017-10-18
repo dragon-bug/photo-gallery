@@ -2,14 +2,8 @@ package net.threeple.pg.api;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Calendar;
 import java.util.Random;
-import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +18,6 @@ import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class AsyncUploadTest {
 	final Logger logger = LoggerFactory.getLogger(AsyncUploadTest.class);
-	private String path;
 	private AsyncUploader uploader;
 	
 	@Before
@@ -34,24 +27,13 @@ public class AsyncUploadTest {
 		
 		this.uploader = PhotoStorageFactory.getPhotoStorage(false);
 		
-		File home = new File(SimplePsdServer.getStoragePath());
-		File[] psds = home.listFiles();
-		for(File psd : psds) {
-			FileUtils.emptyDir(psd);
-		}
-		
-		Calendar cal = Calendar.getInstance();
-		String year = String.valueOf(cal.get(Calendar.YEAR));
-		String month = String.valueOf(cal.get(Calendar.MONTH) + 1);
-		String day = String.valueOf(cal.get(Calendar.DATE));
-		this.path = FileUtils.joinPath(year, month, day);
-		
+		UploadUtils.emptyUploadDir();
 	}
 	
 	@Test
 	public void testUpload() throws Exception {
 		
-		File[] pictures = getPictures();
+		File[] pictures = UploadUtils.getPictures();
 		String[] filenames = new String[pictures.length];
 		
 		Random random = new Random();
@@ -61,7 +43,7 @@ public class AsyncUploadTest {
 		for(int i = 0; i < pictures.length; i++) {
 			File picture = pictures[i];
 			byte[] body = FileUtils.read(picture);
-			String filename = changeFilename(picture.getName());
+			String filename = UploadUtils.createUri(picture.getName());
 			filenames[i] = filename;
 			
 			uploader.asyncUpload(filename, body);
@@ -87,15 +69,6 @@ public class AsyncUploadTest {
 		assertEquals("原文件的摘要与上传后的文件摘要不一致", od, ud);
 		
 		Thread.sleep(100);
-		writeFilenamesToFile(filenames);
-	}
-	
-	private String changeFilename(String filename) {
-		String ext = filename.substring(filename.lastIndexOf('.'), filename.length());
-		UUID uuid = UUID.randomUUID();
-		String rfilename = FileUtils.joinPath(this.path, uuid.toString() + ext);
-		logger.debug("本地文件{}改名为{}", filename, rfilename);
-		return rfilename;
 	}
 	
 	private void checkFileExists(String[] filenames) throws Exception {
@@ -109,31 +82,6 @@ public class AsyncUploadTest {
 				Thread.sleep(50);
 			}
 		}
-	}
-	
-	private void writeFilenamesToFile(String[] filenames) throws IOException {
-		String userHome = System.getProperty("user.home");
-		File file = new File(FileUtils.joinPath(userHome, "Documents\\filenames.txt"));
-		BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-		
-		for(int i = 0; i < filenames.length; i++) {
-			writer.write(filenames[i] + "\n");
-		}
-		writer.close();
-	}
-	
-	private File[] getPictures() throws IOException {
-		String userHome = System.getProperty("user.home");
-		File picturesHome = new File(FileUtils.joinPath(userHome, "Pictures"));
-		return picturesHome.listFiles(new FileFilter() {
-
-			@Override
-			public boolean accept(File pathname) {
-				String name = pathname.getName();
-				return pathname.isFile() && (name.endsWith(".jpg") || name.endsWith(".png"));
-			}
-			
-		});
 	}
 	
 }
