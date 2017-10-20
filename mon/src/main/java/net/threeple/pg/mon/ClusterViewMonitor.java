@@ -22,13 +22,15 @@ import net.threeple.pg.shared.util.FileUtils;
 
 public class ClusterViewMonitor extends Observable implements Observer, Runnable {
 	final Logger logger = LoggerFactory.getLogger(ClusterViewMonitor.class);
+	private String name;
 	private int port;
 	private PsdNode[] psdNodes;
 	private PlacementGroup[] pgs;
 	private final Executor executor;
 	private final AtomicInteger version;
 
-	public ClusterViewMonitor(int _port) {
+	public ClusterViewMonitor(String _name, int _port) {
+		this.name = _name;
 		this.executor = Executors.newCachedThreadPool();
 		this.version = new AtomicInteger(0);
 		this.port = _port;
@@ -43,14 +45,14 @@ public class ClusterViewMonitor extends Observable implements Observer, Runnable
 		ServerSocket server = null;
 		try {
 			server = new ServerSocket(this.port);
-			logger.info("集群视图监控节点启动成功, 监听在{}端口", this.port);
+			logger.info("集群视图监控节点#{}启动成功, 监听在{}端口", this.name, this.port);
 			while(true) {
 				Socket socket = server.accept();
 				Client client = new Client(socket, this);
 				executor.execute(client);
 			}
 		} catch (IOException e) {
-			logger.error("集群视图监控节点启动失败, 失败信息: {}", e.getMessage());
+			logger.error("集群视图监控节点#{}启动失败, 失败信息: {}", this.name, e.getMessage());
 		}
 	}
 
@@ -65,7 +67,7 @@ public class ClusterViewMonitor extends Observable implements Observer, Runnable
 	}
 	
 	public static void main(String[] args) {
-		ClusterViewMonitor monitor = new ClusterViewMonitor(6661);
+		ClusterViewMonitor monitor = new ClusterViewMonitor("mon0", 6661);
 		monitor.init("D:\\mons\\mon0");
 	}
 

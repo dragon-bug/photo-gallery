@@ -11,7 +11,7 @@ public class ClusterViewMonitorTest {
 	
 	@Test
 	public void testInit() {
-		ClusterViewMonitor monitor = new ClusterViewMonitor(6661);
+		ClusterViewMonitor monitor = new ClusterViewMonitor("mon0", 6661);
 		monitor.init("D:\\mons\\mon0");
 		
 		PlacementGroup[] pgs = monitor.getPgs();
