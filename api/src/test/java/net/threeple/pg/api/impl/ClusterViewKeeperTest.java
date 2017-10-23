@@ -21,9 +21,9 @@ public class ClusterViewKeeperTest {
 		for(int i = 0; i < 8; i++) {
 			InetSocketAddress address = cvService.getPsdAddress(i);
 			if(i < 4) {
-				assertTrue(address.getPort() == 6678);
+				assertTrue(address.getPort() > 0);
 			} else {
-				assertTrue(address.getPort() == 6679);
+				assertTrue(address.getPort() > 0);
 			}
 		}
 	}
