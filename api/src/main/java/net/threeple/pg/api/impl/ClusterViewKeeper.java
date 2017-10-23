@@ -2,12 +2,16 @@ package net.threeple.pg.api.impl;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -23,7 +27,7 @@ public class ClusterViewKeeper implements Runnable {
 	private InetSocketAddress[] addresses;
 	private int[] pgs;
 	private static ClusterViewKeeper instance;
-	private String monitorAddrs;
+	private String monitorAddresses;
 	private int port;
 	private AtomicBoolean initiated = new AtomicBoolean(false);
 	
@@ -32,10 +36,29 @@ public class ClusterViewKeeper implements Runnable {
 	}
 	
 	private ClusterViewKeeper() {
-		this.monitorAddrs = System.getenv("PG_MONITORS");
+		String _monitorAddresses = System.getenv("PG_MONITORS");
+		if(_monitorAddresses == null) {
+			_monitorAddresses = getConfigFromFile();
+		}
+		this.monitorAddresses = _monitorAddresses;
 		Thread thread = new Thread(this, "Photo-Gallery-Synchronizer-Thread");
 		thread.setDaemon(true);
 		thread.start();
+	}
+	
+	private String getConfigFromFile() {
+		String _monitorAddresses = null;
+		URL url = this.getClass().getClassLoader().getResource("pg.conf");
+		Properties prpe = new Properties();
+		try {
+			prpe.load(new FileInputStream(url.getPath()));
+			_monitorAddresses = prpe.getProperty("monitors");
+		} catch (FileNotFoundException e) {
+			logger.error("配置文件不存在, 错误信息: {}", e.getMessage());
+		} catch (IOException e) {
+			logger.error("无法读取配置文件, 错误信息: {}", e.getMessage());
+		}
+		return _monitorAddresses;
 	}
 	
 	public synchronized static ClusterViewKeeper getInstance() {
@@ -106,7 +129,7 @@ public class ClusterViewKeeper implements Runnable {
 	}
 	
 	private void init() {
-		String mas = this.monitorAddrs;
+		String mas = this.monitorAddresses;
 		while(!initiated.get()) {
 			try {
 				if(mas == null || mas.isEmpty()) {
