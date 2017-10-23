@@ -84,7 +84,7 @@ project(':api') {
 	    }
 	}
 	dependencies {
-		implementation project(':shared')
+		api project(':shared')
 
 		testImplementation project(':psd')
 		testImplementation project(':mon')
