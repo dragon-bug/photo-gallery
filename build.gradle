@@ -84,7 +84,7 @@ project(':api') {
 	    }
 	}
 	dependencies {
-		api project(':shared')
+		implementation project(':shared')
 
 		testImplementation project(':psd')
 		testImplementation project(':mon')
@@ -125,6 +125,31 @@ project(':psd') {
 		implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
 		testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.10'
+	}
+}
+
+project(':shared') {
+	apply plugin: 'maven-publish'
+
+	publishing {
+		repositories {
+	        maven {
+	            // change to point to your repo, e.g. http://my.org/repo
+	            url "http://nexus.local:8081/repository/maven-snapshots/"
+	            credentials {
+		            username = "${nexusUser}"
+		            password = "${nexusPassword}"
+		        }
+	        }
+	    }
+
+	    publications {
+	        maven(MavenPublication) {
+	            artifactId "$rootProject.name-$project.name"
+				version "$project.version-SNAPSHOT"
+	            from components.java
+	        }
+	    }
 	}
 }
 
