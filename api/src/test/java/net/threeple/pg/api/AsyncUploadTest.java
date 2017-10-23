@@ -8,8 +8,8 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+//import org.junit.Before;
+//import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ public class AsyncUploadTest {
 	final Logger logger = LoggerFactory.getLogger(AsyncUploadTest.class);
 	private AsyncUploader uploader;
 	
-	@Before
+//	@Before
 	public void parpare() throws Exception {
 		URL url = this.getClass().getClassLoader().getResource("test.properties");
 		Properties prpe = new Properties();
@@ -40,7 +40,7 @@ public class AsyncUploadTest {
 		UploadUtils.emptyUploadDir();
 	}
 	
-	@Test
+//	@Test
 	public void testUpload() throws Exception {
 		
 		File[] pictures = UploadUtils.getPictures();
@@ -92,6 +92,12 @@ public class AsyncUploadTest {
 				Thread.sleep(50);
 			}
 		}
+	}
+	
+	public static void main(String[] args) throws Exception {
+		AsyncUploadTest test = new AsyncUploadTest();
+		test.parpare();
+		test.testUpload();
 	}
 	
 }

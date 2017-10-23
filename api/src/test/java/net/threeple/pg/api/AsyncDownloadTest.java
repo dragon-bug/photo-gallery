@@ -12,8 +12,8 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.Future;
 
-import org.junit.Before;
-import org.junit.Test;
+//import org.junit.Before;
+//import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +27,7 @@ public class AsyncDownloadTest {
 	private String year;
 	private AsyncDownloader downloader;
 	
-	@Before
+//	@Before
 	public void prepare() throws Exception {
 		URL url = this.getClass().getClassLoader().getResource("test.properties");
 		Properties prpe = new Properties();
@@ -64,7 +64,7 @@ public class AsyncDownloadTest {
 		}
 	}
 	
-	@Test
+//	@Test
 	public void testDownload() throws Exception {
 		
 		List<Future<byte[]>> rs = new ArrayList<>();
@@ -92,6 +92,12 @@ public class AsyncDownloadTest {
 		logger.debug("原文件{}的摘要码:{}, 下载的文件的摘要码:{}", filenames.get(index), od , dd);
 		
 		assertEquals("原文件的摘要与上传后的文件摘要不一致", od, dd);
+	}
+	
+	public static void main(String[] args) throws Exception {
+		AsyncDownloadTest test = new AsyncDownloadTest();
+		test.prepare();
+		test.testDownload();
 	}
 
 }
