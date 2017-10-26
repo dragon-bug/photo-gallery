@@ -89,9 +89,9 @@ public class Porter implements Runnable {
 					cvKeeper.repair();
 					if(!download) {
 						request.setBody(null);
+						this.queue.offer(request, 1, TimeUnit.SECONDS);
+						logger.info("已重新安排{}的传输工作", uri);
 					}
-					this.queue.offer(request, 1, TimeUnit.SECONDS);
-					logger.info("已重新安排{}的传输工作", uri);
 				} catch (ClusterUnhealthyException e) {
 					logger.error("存储集群异常,暂停5秒等待集群恢复,异常信息:{}", e.getMessage());
 					Thread.sleep(1000 * 5);
