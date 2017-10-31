@@ -1,4 +1,4 @@
-package net.threeple.pg.psd;
+package net.threeple.pg.psd.persistent;
 
 import java.io.File;
 

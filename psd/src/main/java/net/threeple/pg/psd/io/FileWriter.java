@@ -1,4 +1,4 @@
-package net.threeple.pg.psd;
+package net.threeple.pg.psd.io;
 
 import java.io.IOException;
 

@@ -1,7 +1,7 @@
 package net.threeple.pg.api;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.factory.PhotoStorageFactory;
 import net.threeple.pg.api.impl.SimpleClusterViewMonitor;
+import net.threeple.pg.api.model.Response;
 import net.threeple.pg.shared.util.FileUtils;
 
 public class AsyncUploadAndDownloadTest {
@@ -97,8 +98,9 @@ public class AsyncUploadAndDownloadTest {
 					File picture = pictures[i];
 					byte[] body = FileUtils.read(picture);
 					String uri = UploadUtils.createUri(picture.getName());
-					Future<Integer> result = uploader.asyncUpload(uri, body);
-					assertSame("文件" + uri + "上传失败", result.get(), Integer.valueOf(0));
+					Future<Response> result = uploader.asyncUpload(uri, body);
+					int statusCode = result.get().getStatusCode();
+					assertTrue("文件" + uri + "上传失败", (statusCode >= 200) && (statusCode < 300));
 					logger.debug("文件{}上传成功", uri);
 					Thread.sleep(random.nextInt(20));
 					queue.offer(new PhotoFace(uri, ComparsionUtils.digest(body)));
@@ -135,8 +137,8 @@ public class AsyncUploadAndDownloadTest {
 				PhotoFace photo = null;
 				while(!done.get()) {
 					if((photo = queue.poll(20, TimeUnit.MILLISECONDS)) != null) {
-						Future<byte[]> result = downloader.asyncDownload(photo.getUri());
-						byte[] body = result.get();
+						Future<Response> result = downloader.asyncDownload(photo.getUri());
+						byte[] body = result.get().getBody();
 						assertEquals("文件" + photo.getUri() + "下载失败", photo.getDigest(), ComparsionUtils.digest(body));
 						logger.debug("文件{}下载成功, 下载{}字节", photo.getUri(), body.length);
 					}

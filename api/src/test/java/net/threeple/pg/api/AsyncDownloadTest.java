@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import net.threeple.pg.api.factory.PhotoStorageFactory;
 import net.threeple.pg.api.impl.AsyncPhotoStorage;
 import net.threeple.pg.api.impl.SimpleClusterViewMonitor;
+import net.threeple.pg.api.model.Response;
 
 public class AsyncDownloadTest {
 	final Logger logger = LoggerFactory.getLogger(AsyncDownloadTest.class);
@@ -67,15 +68,15 @@ public class AsyncDownloadTest {
 //	@Test
 	public void testDownload() throws Exception {
 		
-		List<Future<byte[]>> rs = new ArrayList<>();
+		List<Future<Response>> rs = new ArrayList<>();
 		Random random = new Random();
 		for(String filename : filenames) {
 			Thread.sleep(random.nextInt(5));
-			Future<byte[]> result = downloader.asyncDownload(filename);
+			Future<Response> result = downloader.asyncDownload(filename);
 			rs.add(result);
 		}
 		
-		Future<byte[]> lastone = rs.get(rs.size() - 1);
+		Future<Response> lastone = rs.get(rs.size() - 1);
 		lastone.get();
 		
 		if(((AsyncPhotoStorage)PhotoStorageFactory.getPhotoStorage(false)).isWork()) {
@@ -85,8 +86,8 @@ public class AsyncDownloadTest {
 		Thread.sleep(10);
 		
 		int index = random.nextInt(rs.size());
-		Future<byte[]> someone = rs.get(index);
-		byte[] body = someone.get();
+		Future<Response> someone = rs.get(index);
+		byte[] body = someone.get().getBody();
 		String dd = ComparsionUtils.digest(body);
 		String od = ComparsionUtils.digest(filenames.get(index));
 		logger.debug("原文件{}的摘要码:{}, 下载的文件的摘要码:{}", filenames.get(index), od , dd);

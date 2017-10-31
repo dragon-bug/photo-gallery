@@ -7,6 +7,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import net.threeple.pg.psd.persistent.Storage;
+
 public class Bootstrap {
 
 	public static void main(String[] args) {

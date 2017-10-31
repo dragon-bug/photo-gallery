@@ -7,7 +7,7 @@ import java.net.InetSocketAddress;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ClusterViewKeeperTest {
+public class ClusterViewWatcherTest {
 	
 	@Before
 	public void prepare() throws Exception {
@@ -16,7 +16,7 @@ public class ClusterViewKeeperTest {
 	
 	@Test
 	public void testGetPsdAddress() throws Exception {
-		ClusterViewKeeper cvService = ClusterViewKeeper.getInstance();
+		ClusterViewWatcher cvService = ClusterViewWatcher.getInstance();
 		Thread.sleep(50);
 		for(int i = 0; i < 8; i++) {
 			InetSocketAddress address = cvService.getPsdAddress(i);

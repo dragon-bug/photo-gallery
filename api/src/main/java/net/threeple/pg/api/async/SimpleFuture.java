@@ -1,4 +1,4 @@
-package net.threeple.pg.api.request;
+package net.threeple.pg.api.async;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
@@ -8,7 +8,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SimpleFuture<V> implements Future<V> {
+import net.threeple.pg.api.model.Response;
+
+public class SimpleFuture implements Future<Response> {
 	private volatile Object result;
 	private final ReentrantLock lock = new ReentrantLock();
 	
@@ -56,7 +58,7 @@ public class SimpleFuture<V> implements Future<V> {
 		return r;
 	}
 	
-	private V reportGet(Object r) throws InterruptedException, ExecutionException {
+	private Response reportGet(Object r) throws InterruptedException, ExecutionException {
 		if (r == null) // by convention below, null means interrupted
             throw new InterruptedException();
         if (r instanceof AltResult) {
@@ -70,7 +72,7 @@ public class SimpleFuture<V> implements Future<V> {
                 x = cause;
             throw new ExecutionException(x);
         }
-        @SuppressWarnings("unchecked") V t = (V) r;
+        Response t = (Response) r;
         return t;
 	}
 	
@@ -82,13 +84,13 @@ public class SimpleFuture<V> implements Future<V> {
 	}
 
 	@Override
-	public V get() throws InterruptedException, ExecutionException {
+	public Response get() throws InterruptedException, ExecutionException {
 		Object r;
         return reportGet((r = this.result) == null ? waitingGet(true) : r);
 	}
 
 	@Override
-	public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+	public Response get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 		Object r;
         long nanos = unit.toNanos(timeout);
         return reportGet((r = this.result) == null ? timedGet(nanos) : r);
@@ -106,7 +108,7 @@ public class SimpleFuture<V> implements Future<V> {
 		return result != null;
 	}
 	
-	public boolean complete(V _value) {
+	public boolean complete(Response _value) {
 		return internalComplete(_value);
 	}
 

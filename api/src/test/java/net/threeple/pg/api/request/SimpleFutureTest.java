@@ -9,8 +9,11 @@ import java.util.concurrent.TimeoutException;
 import org.junit.Before;
 import org.junit.Test;
 
+import net.threeple.pg.api.async.SimpleFuture;
+import net.threeple.pg.api.model.Response;
+
 public class SimpleFutureTest {
-	private SimpleFuture<Integer> future = new SimpleFuture<>();
+	private SimpleFuture future = new SimpleFuture();
 	
 	@Before
 	public void prepare() {
@@ -23,7 +26,7 @@ public class SimpleFutureTest {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				boolean com = future.complete(1);
+				boolean com = future.complete(new Response(200));
 				assertTrue("赋值失败", com);
 			}
 			
@@ -33,12 +36,12 @@ public class SimpleFutureTest {
 	
 	@Test
 	public void testGet() throws Exception {
-		assertSame("未得到正确的值", Integer.valueOf(1), future.get());
+		assertSame("未得到正确的值", Integer.valueOf(200), future.get().getStatusCode());
 	}
 	
 	@Test
 	public void testTimeoutGet() throws Exception {
-		assertSame("超时仍未得到正确的值", Integer.valueOf(1), future.get(15, TimeUnit.MILLISECONDS));
+		assertSame("超时仍未得到正确的值", Integer.valueOf(200), future.get(15, TimeUnit.MILLISECONDS).getStatusCode());
 	}
 	
 	@Test(expected=TimeoutException.class)

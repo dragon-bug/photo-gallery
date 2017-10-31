@@ -9,6 +9,10 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.threeple.pg.psd.client.RequestHandler;
+import net.threeple.pg.psd.persistent.Storage;
+import net.threeple.pg.psd.client.Request;
+
 public class PsdServer {
 	Logger logger = LoggerFactory.getLogger(PsdServer.class);
 	private final Storage storage;
@@ -26,7 +30,7 @@ public class PsdServer {
 			logger.info("存储节点{}启动成功，监听在{}端口", this.storage.getId(), port);
 			while(true) {
 				Socket socket = server.accept();
-				executor.execute(new Client(socket, this.storage));
+				executor.execute(new RequestHandler(new Request(socket), this.storage));
 			}
 		} catch (IOException e) {
 			logger.error("存储节点{}启动失败，失败信息：{}", this.storage.getId(), e.getMessage());
@@ -43,5 +47,4 @@ public class PsdServer {
 			}
 		}
 	}
-	
 }

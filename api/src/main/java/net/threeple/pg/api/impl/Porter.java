@@ -1,20 +1,8 @@
 package net.threeple.pg.api.impl;
 
-import static net.threeple.pg.shared.constant.MagicNumber.UPLOAD;
-import static net.threeple.pg.shared.constant.MagicNumber.DOWNLOAD;
-import static net.threeple.pg.shared.constant.MagicNumber.DONE;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PushbackInputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,17 +11,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.exception.ClusterUnhealthyException;
-import net.threeple.pg.api.request.Request;
-import net.threeple.pg.api.request.SimpleFuture;
-import net.threeple.pg.shared.message.AbstractUriMessageHandler;
-import net.threeple.pg.shared.message.MessageReceiver;
-import net.threeple.pg.shared.message.MessageSender;
+import net.threeple.pg.api.handler.DeleteHandler;
+import net.threeple.pg.api.handler.DownloadHandler;
+import net.threeple.pg.api.handler.Handler;
+import net.threeple.pg.api.handler.UploadHandler;
+import net.threeple.pg.api.model.IRequest;
 import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class Porter implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(Porter.class);
 	private final static int POLL_TIMEOUT = 100;
-	private BlockingQueue<Request> queue;
+	private BlockingQueue<IRequest> queue;
 	private AsyncPhotoStorage photoStorage;
 	private static AtomicInteger instanceCounter = new AtomicInteger();
 	private int id;
@@ -47,51 +35,33 @@ public class Porter implements Runnable {
 
 	@Override
 	public void run() {
-		Request request = null;
-		MessageReceiver downloader = null;
-		MessageSender uploader = null;
-		ClusterViewKeeper cvKeeper = ClusterViewKeeper.getInstance();
+		ClusterViewWatcher watcher = ClusterViewWatcher.getInstance();
 
 		long start = System.currentTimeMillis();
 		int quntity = 0;
 		
-		boolean download = true;
+		Handler downloadHandler = new DownloadHandler();
+		Handler uploadHandler = new UploadHandler();
+		Handler deleteHandler = new DeleteHandler();
+		downloadHandler.setNext(uploadHandler);
+		uploadHandler.setNext(deleteHandler);
+		
+		IRequest request = null;
 		try {
 			logger.debug("搬运#{}工开始工作...", this.id);
 			while (this.photoStorage.isWork() && 
 					(request = this.queue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS)) != null) {
+
 				Socket socket = new Socket();
+				request.setSocket(socket);
 				String uri = request.getUri();
 				try {
-
 					int placement = PlacementCalculator.calculate(uri);
-					InetSocketAddress address = cvKeeper.getPsdAddress(placement);
+					InetSocketAddress address = watcher.getPsdAddress(placement);
 					socket.connect(address, 1000 * 5);
-
-					if (request.getBody() == null) {
-						downloader = new PhotoDownloadHandler(socket, uri);
-						downloader.receive();;
-						byte[] body = ((PhotoDownloadHandler)downloader).getBody();
-						@SuppressWarnings("unchecked")
-						SimpleFuture<byte[]> future = (SimpleFuture<byte[]>) request.getFuture();
-						future.complete(body);
-					} else { // 上传
-						download = false;
-						uploader = new PhotoUploadHandler(socket, uri, request.getBody());
-						uploader.send();
-						@SuppressWarnings("unchecked")
-						SimpleFuture<Integer> future = (SimpleFuture<Integer>) request.getFuture();
-						future.complete(0);
-						
-					}
+					downloadHandler.handle(request);
 				} catch (IOException e) {
 					logger.error("未完成{}的传输工作, 错误信息:{}", uri, e.getMessage());
-					cvKeeper.repair();
-					if(!download) {
-						request.setBody(null);
-						this.queue.offer(request, 1, TimeUnit.SECONDS);
-						logger.info("已重新安排{}的传输工作", uri);
-					}
 				} catch (ClusterUnhealthyException e) {
 					logger.error("存储集群异常,暂停5秒等待集群恢复,异常信息:{}", e.getMessage());
 					Thread.sleep(1000 * 5);
@@ -105,7 +75,6 @@ public class Porter implements Runnable {
 				quntity++;
 				logger.debug("搬运工#{}完成第{}个任务", this.id, quntity);
 			} // end while
-			
 		} catch (InterruptedException e) {
 			logger.error("搬运工#{}的工作被中断,错误代码:{}", this.id, e.getMessage());
 		} finally {
@@ -114,78 +83,4 @@ public class Porter implements Runnable {
 		}
 	}
 	
-	private class PhotoUploadHandler extends AbstractUriMessageHandler {
-		private byte[] body;
-		
-		private PhotoUploadHandler(Socket _socket, String _uri, byte[] _body) throws IOException {
-			InputStream _in = _socket.getInputStream();
-			this.pbin = new PushbackInputStream(new BufferedInputStream(_in));
-			this.in = new DataInputStream(this.pbin);
-			OutputStream _out = _socket.getOutputStream();
-			this.out = new DataOutputStream(new BufferedOutputStream(_out));
-			this.uri = _uri;
-			this.body = _body;
-		}
-		
-		
-		
-		@Override
-		public void send() throws IOException {
-			this.out.write(UPLOAD);
-			super.send();
-			int length = this.body.length;
-			this.out.writeInt(length);
-			this.out.write(this.body);
-			this.out.flush();
-			
-			int result = this.in.read();
-			if(result != DONE) {
-				throw new IOException("上传文件" + this.uri + "失败, 失败原因: 没有收到正确的响应");
-			}
-			logger.debug("搬运工#{}上传文件{}成功, 共上传{}字节", id, this.uri, this.body.length);
-			this.out.close();
-			this.in.close();
-		}
-		
-	}
-	
-	private class PhotoDownloadHandler extends AbstractUriMessageHandler {
-		private byte[] body;
-		
-		private PhotoDownloadHandler(Socket _socket, String _uri) throws IOException {
-			InputStream _in = _socket.getInputStream();
-			this.pbin = new PushbackInputStream(new BufferedInputStream(_in));
-			this.in = new DataInputStream(this.pbin);
-			OutputStream _out = _socket.getOutputStream();
-			this.out = new DataOutputStream(new BufferedOutputStream(_out));
-			this.uri = _uri;
-		}
-		
-		private byte[] getBody() {
-			return this.body;
-		}
-		
-		@Override
-		public void receive() throws IOException {
-			this.out.write(DOWNLOAD);
-			super.send();
-			
-			int remain = this.in.readInt();
-			byte[] _body = new byte[0];
-			byte[] buffer = new byte[1024 * 10];
-			int total = 0;
-			while(remain > 0) {
-				total = this.in.read(buffer);
-				int ol = _body.length;
-				_body = Arrays.copyOf(_body, ol + total);
-				System.arraycopy(buffer, 0, _body, ol, total);
-				remain -= total;
-			}
-			this.body = _body;
-			logger.debug("搬运工#{}下载文件{}成功, 共下载{}字节", id, this.uri, this.body.length);
-		}
-
-		
-	}
-
 }

@@ -1,7 +1,7 @@
 package net.threeple.pg.api;
 
 import net.threeple.pg.psd.PsdServer;
-import net.threeple.pg.psd.Storage;
+import net.threeple.pg.psd.persistent.Storage;
 import net.threeple.pg.shared.util.FileUtils;
 
 public class SimplePsdServer {

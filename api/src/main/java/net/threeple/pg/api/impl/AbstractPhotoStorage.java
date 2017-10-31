@@ -4,7 +4,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 
 import net.threeple.pg.api.PhotoStorage;
-import net.threeple.pg.api.request.Request;
+import net.threeple.pg.api.model.IRequest;
+import net.threeple.pg.api.model.Response;
 import net.threeple.pg.shared.exception.OperationNotSupportedException;
 
 public abstract class AbstractPhotoStorage implements PhotoStorage {
@@ -20,16 +21,16 @@ public abstract class AbstractPhotoStorage implements PhotoStorage {
 	}
 
 	@Override
-	public Future<byte[]> asyncDownload(String uri) {
+	public Future<Response> asyncDownload(String uri) {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public Future<Integer> asyncUpload(String uri, byte[] body) {
+	public Future<Response> asyncUpload(String uri, byte[] body) {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public abstract BlockingQueue<Request> getQueue();
+	public abstract BlockingQueue<IRequest> getQueue();
 
 }

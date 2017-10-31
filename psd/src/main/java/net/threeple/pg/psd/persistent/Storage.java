@@ -1,13 +1,14 @@
-package net.threeple.pg.psd;
+package net.threeple.pg.psd.persistent;
 
 import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.threeple.pg.psd.io.FileOperation;
 import net.threeple.pg.shared.util.PlacementCalculator;
 
-public class Storage implements FileWriter, FileReader {
+public class Storage implements FileOperation {
 	final Logger logger = LoggerFactory.getLogger(Storage.class);
 	private final int id;
 	private final String root;
@@ -30,24 +31,15 @@ public class Storage implements FileWriter, FileReader {
 	@Override
 	public byte[] read(String uri) throws IOException {
 		byte[] body = new byte[]{-1};
-		try {
-			PlacementGroup pg = this.placementGroupFactory.create(uri);
-			body = pg.read(uri);
-		} catch (IOException e) {
-			logger.error("无法读取文件：{}", uri);
-		}
+		PlacementGroup pg = this.placementGroupFactory.create(uri);
+		body = pg.read(uri);
 		return body;
 	}
 	
 	@Override
 	public void write(String uri, byte[] body) throws IOException{
-		try {
-			PlacementGroup pg = this.placementGroupFactory.create(uri);
-			pg.write(uri, body);
-		} catch (IOException e) {
-			logger.error("无法存储文件：{}", uri);
-			e.printStackTrace();
-		}
+		PlacementGroup pg = this.placementGroupFactory.create(uri);
+		pg.write(uri, body);
 		
 	}
 	
@@ -57,5 +49,17 @@ public class Storage implements FileWriter, FileReader {
 			int placement = PlacementCalculator.calculate(uri);
 			return new PlacementGroup(placement, root);
 		}
+	}
+
+	@Override
+	public boolean exists(String uri) {
+		PlacementGroup pg = this.placementGroupFactory.create(uri);
+		return pg.exists(uri);
+	}
+
+	@Override
+	public boolean delete(String uri) {
+		PlacementGroup pg = this.placementGroupFactory.create(uri);
+		return pg.delete(uri);
 	}
 }
