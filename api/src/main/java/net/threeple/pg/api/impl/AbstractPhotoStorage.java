@@ -11,12 +11,12 @@ import net.threeple.pg.shared.exception.OperationNotSupportedException;
 public abstract class AbstractPhotoStorage implements PhotoStorage {
 
 	@Override
-	public byte[] download(String uri) {
+	public Response download(String uri) {
 		throw new OperationNotSupportedException();
 	}
 
 	@Override
-	public int upload(String uri, byte[] body) {
+	public Response upload(String uri, byte[] body) {
 		throw new OperationNotSupportedException();
 	}
 
