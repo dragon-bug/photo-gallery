@@ -1,4 +1,4 @@
-package net.threeple.pg.api.impl;
+package net.threeple.pg.api.cluster;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

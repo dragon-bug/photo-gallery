@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.threeple.pg.api.cluster.ClusterViewWatcher;
 import net.threeple.pg.api.exception.ClusterUnhealthyException;
 import net.threeple.pg.api.handler.DeleteHandler;
 import net.threeple.pg.api.handler.DownloadHandler;

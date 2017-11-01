@@ -7,6 +7,8 @@ import java.net.InetSocketAddress;
 import org.junit.Before;
 import org.junit.Test;
 
+import net.threeple.pg.api.cluster.ClusterViewWatcher;
+
 public class ClusterViewWatcherTest {
 	
 	@Before
