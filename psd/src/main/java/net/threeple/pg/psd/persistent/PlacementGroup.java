@@ -35,7 +35,6 @@ public class PlacementGroup implements FileOperation {
 	public void write(String uri, byte[] body) throws IOException {
 		String path = FileUtils.joinPath(this.root, uri);
 		FileUtils.write(path, body);
-		logger.info("文件{}写入成功,共写入{}字节", uri, body.length);
 	}
 
 	@Override

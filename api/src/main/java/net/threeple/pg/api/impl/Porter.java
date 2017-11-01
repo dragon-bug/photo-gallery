@@ -30,15 +30,16 @@ public class Porter implements Runnable {
 		this.photoStorage = _photoStorage;
 		this.queue = _photoStorage.getQueue();
 		this.id = instanceCounter.getAndIncrement();
-		logger.info("搬运工#{}被唤醒", this.id);
+		logger.info("工人#{}被唤醒", this.id);
 	}
 
 	@Override
 	public void run() {
 		ClusterViewWatcher watcher = ClusterViewWatcher.getInstance();
-
+		logger.debug("获得集群视图哨兵实例");
+		
 		long start = System.currentTimeMillis();
-		int quntity = 0;
+		int quantity = 0;
 		
 		Handler downloadHandler = new DownloadHandler();
 		Handler uploadHandler = new UploadHandler();
@@ -48,38 +49,51 @@ public class Porter implements Runnable {
 		
 		IRequest request = null;
 		try {
-			logger.debug("搬运#{}工开始工作...", this.id);
-			while (this.photoStorage.isWork() && 
-					(request = this.queue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS)) != null) {
-
+			logger.debug("工人#{}完成准备工作...", this.id);
+			while ((request = this.queue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS)) != null) {
+				String uri = request.getUri();
+				logger.info("工人#{}获得{}的{}工作,工作序号:{}", this.id, uri, request.getOperation(), quantity);
 				Socket socket = new Socket();
 				request.setSocket(socket);
-				String uri = request.getUri();
 				try {
 					int placement = PlacementCalculator.calculate(uri);
+					logger.debug("获得文件{}的归置：{}", uri, placement);
+					
 					InetSocketAddress address = watcher.getPsdAddress(placement);
 					socket.connect(address, 1000 * 5);
+					logger.info("成功连接至存储节点：{}", address);
+					
 					downloadHandler.handle(request);
+					logger.info("完成文件{}的{}工作", uri, request.getOperation());
 				} catch (IOException e) {
-					logger.error("未完成{}的传输工作, 错误信息:{}", uri, e.getMessage());
+					request.getFuture().cancel(true);
+					logger.error("执行文件{}的传输工作时遇到错误，错误信息：{}", uri, e.getMessage());
 				} catch (ClusterUnhealthyException e) {
+					request.getFuture().cancel(true);
 					logger.error("存储集群异常,暂停5秒等待集群恢复,异常信息:{}", e.getMessage());
 					Thread.sleep(1000 * 5);
 				} finally {
+					if(request.getFuture().isCancelled()) {
+						logger.error("未能完成文件{}的{}工作", uri, request.getOperation());
+					}
 					try {
 						socket.close();
 					} catch (IOException e) {
 						logger.error("未能正确关闭套接字, 错误信息: {}", e.getMessage());
 					}
 				}
-				quntity++;
-				logger.debug("搬运工#{}完成第{}个任务", this.id, quntity);
+				quantity++;
+				logger.debug("工人#{}完成第{}个任务", this.id, quantity);
 			} // end while
 		} catch (InterruptedException e) {
-			logger.error("搬运工#{}的工作被中断,错误代码:{}", this.id, e.getMessage());
+			if(request != null) {
+				request.getFuture().cancel(true);
+			}
+			logger.error("工人#{}的工作被中断,错误代码:{}", this.id, e.getMessage());
 		} finally {
-			logger.info("搬运工#{}结束此次工作, 完成任务{}个, 耗时{}毫秒", this.id, quntity, (System.currentTimeMillis() - start - POLL_TIMEOUT));
 			this.photoStorage.free();
+			instanceCounter.set(0);
+			logger.info("工人#{}结束此次工作, 完成任务{}个, 耗时{}毫秒", this.id, quantity, (System.currentTimeMillis() - start - POLL_TIMEOUT));
 		}
 	}
 	

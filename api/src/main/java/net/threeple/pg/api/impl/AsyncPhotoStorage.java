@@ -6,7 +6,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,13 +26,14 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 	private final BlockingQueue<IRequest> queue;
 	private Executor executor;
 	private AtomicInteger busyThreshold;
+	private AtomicInteger workerCount;
 	private final ReentrantLock lock = new ReentrantLock();
-	private AtomicBoolean work = new AtomicBoolean(false);
 	
 	private AsyncPhotoStorage() {
 		this.queue = new ArrayBlockingQueue<>(MAX_JOBS_QUANTITY);
 		this.executor = Executors.newCachedThreadPool();
 		this.busyThreshold = new AtomicInteger(DEFAULT_BUSY_THRESHOLD);
+		this.workerCount = new AtomicInteger(0);
 	}
 	
 	@Override
@@ -48,12 +48,17 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		request.setUri(uri);
 		Future<Response> future = new SimpleFuture();
 		request.setFuture(future);
-		
+		logger.info("完成组装文件{}的下载请求，准备放入工作队列", uri);
 		try {
+			lock.lock();
 			this.queue.offer(request, 1, TimeUnit.SECONDS);
-			getUp();
+			ring();
+			logger.info("成功将文件{}的下载请求放入工作队列，准备唤醒工人工作", uri);
 		} catch (InterruptedException e) {
+			future.cancel(true);
 			logger.error("派遣下载文件{}的工作被中断, 中断信息: {}", uri, e.getMessage());
+		} finally {
+			lock.unlock();
 		}
 		
 		return future;
@@ -67,12 +72,17 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		request.setBody(body);
 		Future<Response> future = new SimpleFuture();
 		request.setFuture(future);
-		
+		logger.info("完成组装文件{}的上传请求，准备放入工作队列", uri);
 		try {
+			lock.lock();
 			this.queue.offer(request, 1, TimeUnit.SECONDS);
-			getUp();
+			ring();
+			logger.info("成功将文件{}的上传请求放入工作队列，准备唤醒工人工作", uri);
 		} catch (InterruptedException e) {
+			future.cancel(true);
 			logger.error("派遣上传文件{}的工作被中断, 中断信息: {}", uri, e.getMessage());
+		} finally {
+			lock.unlock();
 		}
 		
 		return future;
@@ -85,43 +95,55 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		request.setUri(uri);
 		Future<Response> future = new SimpleFuture();
 		request.setFuture(future);
-		
+		logger.info("完成组装文件{}的删除请求，准备放入工作队列", uri);
 		try {
+			lock.lock();
 			this.queue.offer(request, 1, TimeUnit.SECONDS);
-			getUp();
+			ring();
+			logger.info("成功将文件{}的删除请求放入工作队列，准备唤醒工人工作", uri);
 		} catch (InterruptedException e) {
+			future.cancel(true);
 			logger.error("派遣删除文件{}的工作被中断, 中断信息: {}", uri, e.getMessage());
+		} finally {
+			lock.unlock();
 		}
 		return future;
 	}
 
-	private void getUp() {
-		logger.debug("当前有{}个待处理工作", this.queue.size());
-		if (this.work.get()) {
-			if (this.queue.size() > this.busyThreshold.get()) {
-				logger.info("工作太忙,添个人帮忙...");
-				this.busyThreshold.getAndAdd(STEP);
-				this.executor.execute(new Porter(this));
+	private void ring() {
+		try {
+			lock.lock();
+			if(this.workerCount.get() > 0) {
+				if (this.queue.size() > this.busyThreshold.get()) {
+					logger.info("工作太忙,添个工人帮忙...");
+					this.busyThreshold.getAndAdd(STEP);
+					createWorker();
+				}
+			} else { // 没有正在工作的工人
+				logger.info("缺少工作的工人，请一个...");
+				createWorker();
 			}
-		} else {
-			this.executor.execute(new Porter(this));
-			this.work.compareAndSet(false, true);
+		} finally {
+			lock.unlock();
 		}
 	}
 	
-	public boolean isWork() {
-		return this.work.get();
+	private void createWorker() {
+		this.executor.execute(new Porter(this));
+		int count = this.workerCount.incrementAndGet();
+		logger.info("当前有{}个工人正在工作", count);
 	}
 	
 	public void free() {
-		if(this.work.get()) {
-			try {
-				lock.lock();
+		try {
+			lock.lock();
+			this.workerCount.decrementAndGet();
+			if(this.busyThreshold.get() > DEFAULT_BUSY_THRESHOLD) {
 				this.busyThreshold.set(DEFAULT_BUSY_THRESHOLD);
-				this.work.compareAndSet(true, false);
-			} finally {
-				lock.unlock();
 			}
+			logger.info("工作都完成了，恢复工作现场");
+		} finally {
+			lock.unlock();
 		}
 	}
 	

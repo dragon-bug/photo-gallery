@@ -33,6 +33,7 @@ public class Storage implements FileOperation {
 		byte[] body = new byte[]{-1};
 		PlacementGroup pg = this.placementGroupFactory.create(uri);
 		body = pg.read(uri);
+		logger.info("成功从归置组{}读取文件{}", pg.getId(), uri);
 		return body;
 	}
 	
@@ -40,17 +41,9 @@ public class Storage implements FileOperation {
 	public void write(String uri, byte[] body) throws IOException{
 		PlacementGroup pg = this.placementGroupFactory.create(uri);
 		pg.write(uri, body);
-		
+		logger.info("成功将文件写入归置组{},写入{}字节数据,文件路径{}", pg.getId(), body.length, uri);
 	}
 	
-	private class PlacementGroupFactory {
-		
-		public PlacementGroup create(String uri) {
-			int placement = PlacementCalculator.calculate(uri);
-			return new PlacementGroup(placement, root);
-		}
-	}
-
 	@Override
 	public boolean exists(String uri) {
 		PlacementGroup pg = this.placementGroupFactory.create(uri);
@@ -60,6 +53,15 @@ public class Storage implements FileOperation {
 	@Override
 	public boolean delete(String uri) {
 		PlacementGroup pg = this.placementGroupFactory.create(uri);
+		logger.info("准备从归置组{}删除文件{}", pg.getId(), uri);
 		return pg.delete(uri);
+	}
+
+	private class PlacementGroupFactory {
+		
+		public PlacementGroup create(String uri) {
+			int placement = PlacementCalculator.calculate(uri);
+			return new PlacementGroup(placement, root);
+		}
 	}
 }

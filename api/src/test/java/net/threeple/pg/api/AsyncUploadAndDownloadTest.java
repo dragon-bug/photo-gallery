@@ -29,7 +29,7 @@ public class AsyncUploadAndDownloadTest {
 	final Logger logger = LoggerFactory.getLogger(AsyncUploadAndDownloadTest.class);
 	private AsyncUploader uploader;
 	private AsyncDownloader downloader;
-	
+	private int threadQuantity = 3;
 	
 	@Before
 	public void prepare() throws Exception {
@@ -51,9 +51,9 @@ public class AsyncUploadAndDownloadTest {
 	
 	@Test
 	public void testUploadAndDownload() throws Exception {
-		int num = 2;
+		int threadQuantity = 3;
 		CountDownLatch begin = new CountDownLatch(1);
-		CountDownLatch end = new CountDownLatch(num * 2);
+		CountDownLatch end = new CountDownLatch(threadQuantity * 2);
 		
 		BlockingQueue<PhotoFace> queue = new ArrayBlockingQueue<>(200);
 		AtomicBoolean done = new AtomicBoolean(false);
@@ -61,7 +61,7 @@ public class AsyncUploadAndDownloadTest {
 		UploadWorker upWorker = new UploadWorker(begin, end, queue, done);
 		DownloadWorker doWorker = new DownloadWorker(begin, end, queue, done);
 		
-		for(int i = 0; i < num; i++) {
+		for(int i = 0; i < threadQuantity; i++) {
 			Thread uploadThread = new Thread(upWorker, "Upload-Worker-Thread-" + i);
 			uploadThread.start();
 			Thread downloadThread = new Thread(doWorker, "Download-Worker-Thread-" + i);
@@ -71,7 +71,7 @@ public class AsyncUploadAndDownloadTest {
 		begin.countDown();
 		end.await();
 		
-		Thread.sleep(100 * num * 2);
+		Thread.sleep(100 * threadQuantity * 2);
 	}
 	
 	private class UploadWorker implements Runnable {
@@ -102,7 +102,7 @@ public class AsyncUploadAndDownloadTest {
 					int statusCode = result.get().getStatusCode();
 					assertTrue("文件" + uri + "上传失败", (statusCode >= 200) && (statusCode < 300));
 					logger.debug("文件{}上传成功", uri);
-					Thread.sleep(random.nextInt(20));
+					Thread.sleep(random.nextInt(10) * 10 * AsyncUploadAndDownloadTest.this.threadQuantity);
 					queue.offer(new PhotoFace(uri, ComparsionUtils.digest(body)));
 				}
 				
@@ -142,7 +142,7 @@ public class AsyncUploadAndDownloadTest {
 						assertEquals("文件" + photo.getUri() + "下载失败", photo.getDigest(), ComparsionUtils.digest(body));
 						logger.debug("文件{}下载成功, 下载{}字节", photo.getUri(), body.length);
 					}
-					Thread.sleep(random.nextInt(20));
+					Thread.sleep(random.nextInt(10) * 10 * AsyncUploadAndDownloadTest.this.threadQuantity);
 				}
 				
 				end.countDown();

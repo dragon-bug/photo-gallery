@@ -36,28 +36,30 @@ public class ClusterViewWatcher implements Runnable {
 	}
 	
 	private ClusterViewWatcher() {
-		String _monitorAddresses = System.getenv("PG_MONITORS");
-		if(_monitorAddresses == null) {
-			_monitorAddresses = getConfigFromFile();
-		}
-		this.monitorAddresses = _monitorAddresses;
-		init();
+		
+		this.monitorAddresses = getConfig();
+		initialize();
 		Thread thread = new Thread(this, "Photo-Gallery-Synchronizer-Thread");
 		thread.setDaemon(true);
 		thread.start();
 	}
 	
-	private String getConfigFromFile() {
-		String _monitorAddresses = null;
-		URL url = this.getClass().getClassLoader().getResource("pg.conf");
-		Properties prpe = new Properties();
-		try {
-			prpe.load(new FileInputStream(url.getPath()));
-			_monitorAddresses = prpe.getProperty("monitors");
-		} catch (FileNotFoundException e) {
-			logger.error("配置文件不存在, 错误信息: {}", e.getMessage());
-		} catch (IOException e) {
-			logger.error("无法读取配置文件, 错误信息: {}", e.getMessage());
+	private String getConfig() {
+		String _monitorAddresses = System.getenv("PG_MONITORS");
+		if(_monitorAddresses == null) {
+			logger.info("环境变量PG_MONITORS不存在，准备从配置文件读取");
+			URL url = this.getClass().getClassLoader().getResource("pg.conf");
+			Properties prpe = new Properties();
+			try {
+				prpe.load(new FileInputStream(url.getPath()));
+				_monitorAddresses = prpe.getProperty("monitors");
+			} catch (FileNotFoundException e) {
+				logger.error("监视器配置文件不存在, 错误信息: {}", e.getMessage());
+			} catch (IOException e) {
+				logger.error("无法读取监视器配置文件, 错误信息: {}", e.getMessage());
+			}
+		} else {
+			logger.info("从环境变量获得监视器配置：{}", _monitorAddresses);
 		}
 		return _monitorAddresses;
 	}
@@ -96,7 +98,7 @@ public class ClusterViewWatcher implements Runnable {
 	
 	public void repair() {
 		initiated.compareAndSet(true, false);
-		init();
+		initialize();
 	}
 	
 	public void start() {
@@ -128,7 +130,7 @@ public class ClusterViewWatcher implements Runnable {
 		start();
 	}
 	
-	private void init() {
+	private void initialize() {
 		String mas = this.monitorAddresses;
 		while(!initiated.get()) {
 			try {
@@ -138,14 +140,18 @@ public class ClusterViewWatcher implements Runnable {
 				} else {
 					int index = mas.indexOf(",");
 					String address = (index > 0) ? mas.substring(0, index) : mas;
+					logger.info("获得监视器地址：{}", address);
 					mas = (index > 0) ? mas.substring(index + 1, mas.length()) : "";
 					Socket socket = new Socket();
+					logger.info("准备连接到监视器{}", address);
 					socket.connect(CustomInetAddressParser.parse(address), 1000 * 5);
+					logger.info("成功连接到监视器{}", address);
 					MessageReceiver receiver = new Initialisation(socket);
 					receiver.receive();
 					socket.close();
 				}
 				initiated.compareAndSet(false, true);
+				logger.info("监视器哨兵完成初始化工作");
 			} catch (InterruptedException e1) {
 				logger.error("重新连接监视器的尝试被中断了,中断信息:{}", e1.getMessage());
 			} catch (IOException e2) {

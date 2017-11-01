@@ -54,6 +54,7 @@ public class Request {
 		byte[] buf = new byte[length];
 		in.read(buf);
 		this.uri = new String(buf, utf8);
+		logger.debug("成功从客户端接收到文件URI: {}", uri);
 		
 		if(Operation.UPLOAD.equals(this.operation)) {
 			int remain = in.readInt();

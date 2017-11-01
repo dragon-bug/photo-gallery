@@ -30,6 +30,7 @@ public class PsdServer {
 			logger.info("存储节点{}启动成功，监听在{}端口", this.storage.getId(), port);
 			while(true) {
 				Socket socket = server.accept();
+				logger.info("获得来自{}的请求", socket.getInetAddress());
 				executor.execute(new RequestHandler(new Request(socket), this.storage));
 			}
 		} catch (IOException e) {
