@@ -26,45 +26,46 @@ public class Processor implements Runnable {
 	public void run() {
 		try {
 			this.request.parse();
-			Response response = this.request.getResponse();
-			BufferedWriter writer = response.getOut();
-			try {
-				List<String> requires = this.request.getRequires();
-				for(String require : requires) {
-					if("AllStorageNode".equals(require)) {
-						writer.write("Response:AllStorageNode");
-						writer.newLine();
-						
-						List<StorageNode> sns = snRepository.getAllStorageNode();
-						for(StorageNode sn : sns) {
-							writer.write(sn.toString());
-							writer.newLine();
-						}
-						
-						writer.write("End");
-						writer.newLine();
-					} else if("AllPlacementGroup".equals(require)) {
-						writer.write("Response:AllPlacementGroup");
-						writer.newLine();
-						
-						List<StorageNode> sns = snRepository.getAllStorageNode();
-						for(StorageNode sn : sns) {
-							for(PlacementGroup pg : sn.getRoomers()) {
-								writer.write(pg.toString());
-								writer.newLine();
-							}
-						}
-						
-						writer.write("End");
-						writer.newLine();
-					}
-				}
-				writer.flush();
-			} catch (IOException e) {
-				logger.error("");
-			}
 		} catch(CloudNotParseRequestException e) {
 			logger.error(e.getMessage());
+		}
+		
+		try {
+			Response response = this.request.getResponse();
+			BufferedWriter writer = response.getOut();
+			List<String> requires = this.request.getRequires();
+			for(String require : requires) {
+				if("AllStorageNode".equals(require)) {
+					writer.write("Response:AllStorageNode");
+					writer.newLine();
+					
+					List<StorageNode> sns = snRepository.getAllStorageNode();
+					for(StorageNode sn : sns) {
+						writer.write(sn.toString());
+						writer.newLine();
+					}
+					
+					writer.write("End");
+					writer.newLine();
+				} else if("AllPlacementGroup".equals(require)) {
+					writer.write("Response:AllPlacementGroup");
+					writer.newLine();
+					
+					List<StorageNode> sns = snRepository.getAllStorageNode();
+					for(StorageNode sn : sns) {
+						for(PlacementGroup pg : sn.getRoomers()) {
+							writer.write(pg.toString());
+							writer.newLine();
+						}
+					}
+					
+					writer.write("End");
+					writer.newLine();
+				}
+			}
+			writer.flush();
+		} catch (IOException e) {
+			logger.error("无法响应请求：错误消息：{}", e.getMessage());
 		}
 	}
 }
