@@ -7,6 +7,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import net.threeple.pg.mon.server.MonitorServer;
+
 public class Bootstrap {
 	
 	public void start(String[] args) {
@@ -17,20 +19,19 @@ public class Bootstrap {
 		
 		Option nameOpt = Option.builder("name").required().hasArg().argName("name").desc("The monitor's name").build();
 		Option portOpt = Option.builder("port").required().hasArg().argName("port").desc("To listen this port").build();
-		Option dataOpt = Option.builder("data").required().hasArg().argName("datapath").desc("The data dir path").build();
 		Options options = new Options();
 		options.addOption(nameOpt);
 		options.addOption(portOpt);
-		options.addOption(dataOpt);
 		
 		CommandLineParser parser = new DefaultParser();
 		try {
 			CommandLine cmd = parser.parse(options, args);
-			ClusterMonitor monitor = new ClusterMonitor(
-					cmd.getOptionValue("name"),
-					Integer.parseInt(cmd.getOptionValue("port")));
-			monitor.init(cmd.getOptionValue("data"));
-			monitor.start();
+			
+			String name = cmd.getOptionValue("name");
+			int port = Integer.parseInt(cmd.getOptionValue("port"));
+			
+			MonitorServer server = new MonitorServer(name, port);
+			server.start();
 		} catch (ParseException e) {
 			System.err.println(e.getMessage());
 		}
