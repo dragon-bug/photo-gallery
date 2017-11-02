@@ -26,7 +26,7 @@ public class Bootstrap {
 		CommandLineParser parser = new DefaultParser();
 		try {
 			CommandLine cmd = parser.parse(options, args);
-			ClusterViewMonitor monitor = new ClusterViewMonitor(
+			ClusterMonitor monitor = new ClusterMonitor(
 					cmd.getOptionValue("name"),
 					Integer.parseInt(cmd.getOptionValue("port")));
 			monitor.init(cmd.getOptionValue("data"));

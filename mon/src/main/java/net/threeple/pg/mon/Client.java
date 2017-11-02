@@ -20,11 +20,11 @@ import net.threeple.pg.shared.message.MessageSender;
 public class Client implements Observer, Runnable {
 	final Logger logger = LoggerFactory.getLogger(Client.class);
 	private Socket socket;
-	private final ClusterViewMonitor cluterView;
+	private final ClusterMonitor cluterView;
 	private int port;
 	private final InetAddress address;
 	
-	public Client(Socket _socket, ClusterViewMonitor _clusterView) {
+	public Client(Socket _socket, ClusterMonitor _clusterView) {
 		this.cluterView = _clusterView;
 		this.socket = _socket;
 		this.address = _socket.getInetAddress();

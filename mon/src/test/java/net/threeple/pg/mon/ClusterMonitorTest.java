@@ -7,11 +7,11 @@ import java.util.Random;
 
 import org.junit.Test;
 
-public class ClusterViewMonitorTest {
+public class ClusterMonitorTest {
 	
 	@Test
 	public void testInit() {
-		ClusterViewMonitor monitor = new ClusterViewMonitor("mon0", 6661);
+		ClusterMonitor monitor = new ClusterMonitor("mon0", 6661);
 		monitor.init("D:\\mons\\mon0");
 		
 		PlacementGroup[] pgs = monitor.getPgs();

@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.shared.util.FileUtils;
 
-public class ClusterViewMonitor extends Observable implements Observer, Runnable {
-	final Logger logger = LoggerFactory.getLogger(ClusterViewMonitor.class);
+public class ClusterMonitor extends Observable implements Observer, Runnable {
+	final Logger logger = LoggerFactory.getLogger(ClusterMonitor.class);
 	private String name;
 	private int port;
 	private PsdNode[] psdNodes;
@@ -29,7 +29,7 @@ public class ClusterViewMonitor extends Observable implements Observer, Runnable
 	private final Executor executor;
 	private final AtomicInteger version;
 
-	public ClusterViewMonitor(String _name, int _port) {
+	public ClusterMonitor(String _name, int _port) {
 		this.name = _name;
 		this.executor = Executors.newCachedThreadPool();
 		this.version = new AtomicInteger(0);
@@ -67,7 +67,7 @@ public class ClusterViewMonitor extends Observable implements Observer, Runnable
 	}
 	
 	public static void main(String[] args) {
-		ClusterViewMonitor monitor = new ClusterViewMonitor("mon0", 6661);
+		ClusterMonitor monitor = new ClusterMonitor("mon0", 6661);
 		monitor.init("D:\\mons\\mon0");
 	}
 
