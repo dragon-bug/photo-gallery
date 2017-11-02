@@ -20,8 +20,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.threeple.pg.api.cluster.SimpleMonitorServer;
 import net.threeple.pg.api.factory.PhotoStorageFactory;
-import net.threeple.pg.api.impl.SimpleClusterViewMonitor;
 import net.threeple.pg.api.model.Response;
 import net.threeple.pg.shared.util.FileUtils;
 
@@ -39,7 +39,7 @@ public class AsyncUploadAndDownloadTest {
 		
 		String server = prpe.getProperty("server");
 		if("inner".equals(server)) {
-			SimpleClusterViewMonitor.start();
+			SimpleMonitorServer.start();
 			SimplePsdServer.start();
 		}
 		

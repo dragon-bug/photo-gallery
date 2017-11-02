@@ -14,7 +14,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ public class ClusterViewWatcher implements Runnable {
 	private Integer[] placements;
 	private static ClusterViewWatcher instance;
 	private int port = 6655;
-	private AtomicBoolean initiated = new AtomicBoolean(false);
+	private final ReentrantLock lock = new ReentrantLock();
 	
 	static {
 		instance = new ClusterViewWatcher();
@@ -43,23 +43,21 @@ public class ClusterViewWatcher implements Runnable {
 	
 	public InetSocketAddress getPsdAddress(int placement) throws InterruptedException, ClusterUnhealthyException {
 		int count = 0;
-		while(!initiated.get()) {
-			if(count > 300) {
-				throw new ClusterUnhealthyException("不能正确初始化哨兵");
-			}
-			logger.info("哨兵初始化未完成,稍等片刻...");
-			Thread.sleep(10 * 1);
+		while(((placements == null) || (placements.length == 0)) 
+				&& (count < 100)) {
+			logger.info("尚未获得集群视图，请稍等片刻");
+			Thread.sleep(10);
 			count++;
 		}
-		
 		int pid = placements[placement];
 		InetSocketAddress address = this.psdAddrs[pid];
 		if(address == null) {
 			String message = String.format("集群异常,异常信息:无法获得存储节点#%1s的连接地址", pid);
 			throw new ClusterUnhealthyException(message);
 		}
-		logger.debug("获得归置组{}所在的存储节点的连接地址：{}", placement, address);
+		logger.debug("获得归置组#{}寄宿的存储节点地址：{}", placement, address);
 		return address;
+		
 	}
 	
 	public Socket getPsdConnection(int placement) 
@@ -80,11 +78,14 @@ public class ClusterViewWatcher implements Runnable {
 			require(getFirstUseableMonitor()); // 向集群监视器申请集群视图信息
 			while(true) {
 				Socket socket = server.accept();
-				response(socket); // 接收集群监视器发回的集群视图信息
-				if(!initiated.get()) {
-					initiated.compareAndSet(false, true);
+				try {
+					lock.lock();
+					response(socket); // 接收集群监视器发回的集群视图信息
 					logger.info("哨兵完成初始化");
+				} finally {
+					lock.unlock();
 				}
+				
 			}
 		} catch (IOException e) {
 			logger.error("哨兵启动失败，错误信息:{}", e.getMessage());
@@ -104,28 +105,26 @@ public class ClusterViewWatcher implements Runnable {
 	private Socket getFirstUseableMonitor() {
 		Socket socket = null;
 		String as = getClusterMonitersConfig();
-		while(!initiated.get()) {
-			try {
-				if(as == null || as.isEmpty()) {
-					logger.warn("可能未配置监视器地址或者所有的监视器都宕机了,等待3秒后重试");
-					Thread.sleep(1000 * 3);
-				} else {
-					int index = as.indexOf(",");
-					String address = (index > 0) ? as.substring(0, index) : as;
-					logger.info("获得监视器地址：{}", address);
-					as = (index > 0) ? as.substring(index + 1, as.length()) : "";
-					socket = new Socket();
-					logger.info("准备连接到监视器{}", address);
-					socket.connect(CustomInetAddressParser.parse(address), 1000 * 5);
-					logger.info("成功连接到监视器{}", address);
-				}
-				
-				logger.info("监视器哨兵完成初始化工作");
-			} catch (InterruptedException e1) {
-				logger.error("重新连接监视器的尝试被中断了,中断信息:{}", e1.getMessage());
-			} catch (IOException e2) {
-				logger.error("未能正确连接到监视器并同步地址信息,错误消息:{}", e2.getMessage());
+		try {
+			if(as == null || as.isEmpty()) {
+				logger.warn("可能未配置监视器地址或者所有的监视器都宕机了,等待3秒后重试");
+				Thread.sleep(1000 * 3);
+			} else {
+				int index = as.indexOf(",");
+				String address = (index > 0) ? as.substring(0, index) : as;
+				logger.info("获得监视器地址：{}", address);
+				as = (index > 0) ? as.substring(index + 1, as.length()) : "";
+				socket = new Socket();
+				logger.info("准备连接到监视器{}", address);
+				socket.connect(CustomInetAddressParser.parse(address), 1000 * 5);
+				logger.info("成功连接到监视器{}", address);
 			}
+			
+			logger.info("监视器哨兵完成初始化工作");
+		} catch (InterruptedException e1) {
+			logger.error("重新连接监视器的尝试被中断了,中断信息:{}", e1.getMessage());
+		} catch (IOException e2) {
+			logger.error("未能正确连接到监视器并同步地址信息,错误消息:{}", e2.getMessage());
 		}
 		return socket;
 	}
@@ -156,7 +155,7 @@ public class ClusterViewWatcher implements Runnable {
 		
 		writer.write("Response:port=" + this.port);
 		writer.newLine();
-		writer.write("Require:AllPsdAddress");
+		writer.write("Require:AllStorageNode");
 		writer.newLine();
 		writer.write("Require:AllPlacementGroup");
 		writer.newLine();
@@ -172,16 +171,17 @@ public class ClusterViewWatcher implements Runnable {
 		
 		String t = null;
 		while((t = reader.readLine()) != null) {
-			if("Response:AllPsdAddress".equals(t)) {
+			if("Response:AllStorageNode".equals(t)) {
 				String v = null;
 				List<InetSocketAddress> list = new ArrayList<>();
 				while(!"End".equals((v = reader.readLine()))) {
-					int eqSign = v.indexOf('=');
-					if(eqSign > 0) {
-						int id = Integer.parseInt(v.substring(0, eqSign));
-						v = v.substring(eqSign + 1);
+					int es = v.indexOf('=');
+					if(es > 0) {
+						int id = Integer.parseInt(v.substring(0, es));
+						v = v.substring(es + 1);
 						InetSocketAddress addr = CustomInetAddressParser.parse(v);
 						list.add(id, addr);
+						logger.debug("获得存储节点#{}的地址：{}", id, v);
 					}
 				}
 				this.psdAddrs = list.toArray(new InetSocketAddress[0]);
@@ -189,17 +189,17 @@ public class ClusterViewWatcher implements Runnable {
 				String v = null;
 				List<Integer> list = new ArrayList<>();
 				while(!"End".equals((v = reader.readLine()))) {
-					int lt = v.indexOf('>');
-					if(lt > 0) {
-						int id = Integer.parseInt(v.substring(0, lt));
-						int pid = Integer.parseInt(v.substring(lt + 1));
+					int gt = v.indexOf('>');
+					if(gt > 0) {
+						int id = Integer.parseInt(v.substring(0, gt));
+						int pid = Integer.parseInt(v.substring(gt + 1));
 						list.add(id, pid);
+						logger.debug("获得归置组#{}的归置：{}", id, pid);
 					}
 				}
 				this.placements = list.toArray(new Integer[0]);
 			}
 		}
-		
 		socket.close();
 	}
 	
