@@ -74,7 +74,13 @@ public class ClusterViewWatcher implements Runnable {
 		ServerSocket server = null;
 		try {
 			server = new ServerSocket();
-			InetSocketAddress addr = CustomInetAddressParser.parse("127.0.0.1:0");
+			String envPort = System.getenv("PG_WATCHER_PORT");
+			InetSocketAddress addr = null;
+			if(envPort == null) {
+				addr = CustomInetAddressParser.parse("127.0.0.1:0");
+			} else {
+				addr = CustomInetAddressParser.parse("127.0.0.1:" + envPort);
+			}
 			server.bind(addr);
 			this.port = server.getLocalPort();
 			logger.info("哨兵启动成功，监听在{}端口", this.port);
