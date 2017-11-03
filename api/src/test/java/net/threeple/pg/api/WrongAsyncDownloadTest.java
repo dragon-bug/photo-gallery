@@ -11,8 +11,8 @@ import java.util.concurrent.Future;
 import org.junit.Before;
 import org.junit.Test;
 
+import net.threeple.pg.api.cluster.SimpleMonitorServer;
 import net.threeple.pg.api.factory.PhotoStorageFactory;
-import net.threeple.pg.api.impl.SimpleClusterViewMonitor;
 import net.threeple.pg.api.model.Response;
 
 public class WrongAsyncDownloadTest {
@@ -26,7 +26,7 @@ public class WrongAsyncDownloadTest {
 		
 		String server = prpe.getProperty("server");
 		if("inner".equals(server)) {
-			SimpleClusterViewMonitor.start();
+			SimpleMonitorServer.start();
 			SimplePsdServer.start();
 		}
 		

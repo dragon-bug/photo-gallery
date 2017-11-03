@@ -1,4 +1,4 @@
-package net.threeple.pg.api.request;
+package net.threeple.pg.api.async;
 
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;

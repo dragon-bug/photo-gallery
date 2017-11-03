@@ -1,4 +1,4 @@
-package net.threeple.pg.api.impl;
+package net.threeple.pg.api.cluster;
 
 import static org.junit.Assert.assertTrue;
 
@@ -6,12 +6,17 @@ import java.net.InetSocketAddress;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import net.threeple.pg.api.cluster.ClusterViewWatcher;
 
 public class ClusterViewWatcherTest {
+	final Logger logger = LoggerFactory.getLogger(ClusterViewWatcherTest.class);
 	
 	@Before
 	public void prepare() throws Exception {
-		SimpleClusterViewMonitor.start();
+		SimpleMonitorServer.start();
 	}
 	
 	@Test

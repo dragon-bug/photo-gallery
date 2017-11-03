@@ -5,4 +5,4 @@
  * @author wayne
  *
  */
-package net.threeple.pg.api.impl;
+package net.threeple.pg.api.cluster;
