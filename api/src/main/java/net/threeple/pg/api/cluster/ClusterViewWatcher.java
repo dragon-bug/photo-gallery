@@ -2,8 +2,8 @@ package net.threeple.pg.api.cluster;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.exception.ClusterUnhealthyException;
 import net.threeple.pg.shared.util.CustomInetAddressParser;
+import net.threeple.pg.shared.util.FileUtils;
 
 public class ClusterViewWatcher implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(ClusterViewWatcher.class);
@@ -90,7 +91,7 @@ public class ClusterViewWatcher implements Runnable {
 				try {
 					lock.lock();
 					response(socket); // 接收集群监视器发回的集群视图信息
-					logger.info("哨兵完成初始化");
+					logger.info("哨兵完成同步集群视图的工作");
 				} finally {
 					lock.unlock();
 				}
@@ -113,8 +114,9 @@ public class ClusterViewWatcher implements Runnable {
 	
 	private Socket getFirstUseableMonitor() {
 		Socket socket = null;
-		String as = getClusterMonitersConfig();
+		String as = null;
 		try {
+			as = getClusterMonitersConfig();
 			if(as == null || as.isEmpty()) {
 				logger.warn("可能未配置监视器地址或者所有的监视器都宕机了,等待3秒后重试");
 				Thread.sleep(1000 * 3);
@@ -131,28 +133,37 @@ public class ClusterViewWatcher implements Runnable {
 			
 			logger.info("监视器哨兵完成初始化工作");
 		} catch (InterruptedException e1) {
-			logger.error("重新连接监视器的尝试被中断了,中断信息:{}", e1.getMessage());
+			logger.error("连接监视器的尝试被中断了,中断信息:{}", e1.getMessage());
 		} catch (IOException e2) {
-			logger.error("未能正确连接到监视器并同步地址信息,错误消息:{}", e2.getMessage());
+			logger.error("未能正确连接到监视器并同步集群信息,错误消息:{}", e2.getMessage());
 		}
 		return socket;
 	}
 	
-	private String getClusterMonitersConfig() {
+	private String getClusterMonitersConfig() throws IOException {
 		String monAddrs = System.getenv("PG_MONITORS");
 		if(monAddrs == null) {
 			logger.info("环境变量PG_MONITORS不存在，准备从配置文件读取");
+			FileInputStream fis = null;
+
 			URL url = this.getClass().getClassLoader().getResource("pg.conf");
-			Properties prpe = new Properties();
-			try {
-				prpe.load(new FileInputStream(url.getPath()));
-				monAddrs = prpe.getProperty("monitors");
-				logger.info("从配置文件获得监视器地址：{}", monAddrs);
-			} catch (FileNotFoundException e) {
-				logger.error("监视器配置文件不存在, 错误信息: {}", e.getMessage());
-			} catch (IOException e) {
-				logger.error("无法读取监视器配置文件, 错误信息: {}", e.getMessage());
+			if(url != null) {
+				fis = new FileInputStream(url.getPath());
+				logger.info("在类路径下找到配置文件，准备读取配置");
+			} else {
+				String path = FileUtils.joinPath(System.getProperty("user.home"), "pg.conf");
+				File file = new File(path);
+				if(!file.exists()) {
+					throw new IOException("监视器配置文件不存在");
+				}
+				fis = new FileInputStream(file);
+				logger.info("在用户家目录下找到配置文件，准备读取配置");
 			}
+			
+			Properties prope = new Properties();
+			prope.load(fis);
+			monAddrs = prope.getProperty("monitors");
+			logger.info("从配置文件获得监视器地址：{}", monAddrs);
 		} else {
 			logger.info("从环境变量获得监视器地址：{}", monAddrs);
 		}
