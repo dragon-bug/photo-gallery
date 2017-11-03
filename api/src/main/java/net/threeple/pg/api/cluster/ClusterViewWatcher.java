@@ -73,7 +73,10 @@ public class ClusterViewWatcher implements Runnable {
 	public void run() {
 		ServerSocket server = null;
 		try {
-			server = new ServerSocket(this.port);
+			server = new ServerSocket();
+			InetSocketAddress addr = CustomInetAddressParser.parse("127.0.0.1:0");
+			server.bind(addr);
+			this.port = server.getLocalPort();
 			logger.info("哨兵启动成功，监听在{}端口", this.port);
 			require(getFirstUseableMonitor()); // 向集群监视器申请集群视图信息
 			while(true) {
