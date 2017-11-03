@@ -7,7 +7,7 @@
  */
  allprojects {
  	group "net.threeple.pg"
- 	version "0.6.4"
+ 	version "0.6.5"
  }
 
 subprojects{
@@ -67,10 +67,10 @@ project(':api') {
 		repositories {
 	        maven {
 	            // change to point to your repo, e.g. http://my.org/repo
-	            url "http://nexus.local:8081/repository/maven-snapshots/"
+	            url "http://maven.saofang.net.cn:8081/nexus/content/repositories/snapshots/"
 	            credentials {
-		            username = "${nexusUser}"
-		            password = "${nexusPassword}"
+		            username = "${nexusUserSF}"
+		            password = "${nexusPasswordSF}"
 		        }
 	        }
 	    }
@@ -135,10 +135,10 @@ project(':shared') {
 		repositories {
 	        maven {
 	            // change to point to your repo, e.g. http://my.org/repo
-	            url "http://nexus.local:8081/repository/maven-snapshots/"
+	            url "http://maven.saofang.net.cn:8081/nexus/content/repositories/snapshots/"
 	            credentials {
-		            username = "${nexusUser}"
-		            password = "${nexusPassword}"
+		            username = "${nexusUserSF}"
+		            password = "${nexusPasswordSF}"
 		        }
 	        }
 	    }

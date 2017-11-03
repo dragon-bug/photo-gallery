@@ -77,9 +77,9 @@ public class ClusterViewWatcher implements Runnable {
 			String envPort = System.getenv("PG_WATCHER_PORT");
 			InetSocketAddress addr = null;
 			if(envPort == null) {
-				addr = CustomInetAddressParser.parse("127.0.0.1:0");
+				addr = CustomInetAddressParser.parse("0.0.0.0:0");
 			} else {
-				addr = CustomInetAddressParser.parse("127.0.0.1:" + envPort);
+				addr = CustomInetAddressParser.parse("0.0.0.0:" + envPort);
 			}
 			server.bind(addr);
 			this.port = server.getLocalPort();
