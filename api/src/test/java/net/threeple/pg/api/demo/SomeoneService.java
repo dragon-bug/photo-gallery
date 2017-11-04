@@ -1,31 +1,15 @@
-# 分布式图片存储系统
-提供可伸缩的、容灾性的分布式图片存储系统。支持异步读写文件，支持负载均衡，以及快速部署等特性。
+package net.threeple.pg.api.demo;
 
-### 快速开始
-在存储节点和监视节点已经部署的情况下，通过以下三部便可使用：
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
-#### 第一步：引入库
-Gradle:
+import net.threeple.pg.api.AsyncDownloader;
+import net.threeple.pg.api.AsyncUploader;
+import net.threeple.pg.api.factory.PhotoStorageFactory;
+import net.threeple.pg.api.model.Response;
+import net.threeple.pg.shared.util.FileUtils;
 
-在build.gradle文件dependencies块增加以下语句：
-
-```
-implementation: grpoup: 'net.threeple.pg', name: 'photo-gallery-api', version: '0.6.7'
-```
-
-#### 第二步：设置监视器地址：
-可在三个地方设置，依优先级顺序分别为：操作系统环境变量、类路径下的pg.conf文件、用户家目录下的pg.conf文件。
-
-```
-monitors=10.1.12.134:6668
-```
-
-#### 第三步：定义成员变量
-Java:
-
-SomeoneService.java
-
-```java
 public class SomeoneService {
 	private AsyncDownloader downloader = PhotoStorageFactory.getPhotoStorage(false);
 	private AsyncUploader uploader = PhotoStorageFactory.getPhotoStorage(false);
@@ -54,4 +38,3 @@ public class SomeoneService {
 		}
 	}
 }
-```
