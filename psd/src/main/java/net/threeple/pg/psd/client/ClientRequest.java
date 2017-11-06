@@ -15,23 +15,23 @@ import net.threeple.pg.shared.constant.MagicNumber;
 import net.threeple.pg.shared.constant.Operation;
 import net.threeple.pg.shared.exception.UnknownOperationException;
 
-public class Request {
-	final Logger logger = LoggerFactory.getLogger(Request.class);
+public class ClientRequest {
+	final Logger logger = LoggerFactory.getLogger(ClientRequest.class);
 	private Socket socket;
 	private Operation operation;
 	private String uri;
 	private byte[] body;
-	private Response response;
+	private ClientResponse response;
 	private Charset utf8 = StandardCharsets.UTF_8;
 	
-	public Request(Socket _socket) {
+	public ClientRequest(Socket _socket) {
 		this.socket = _socket;
 	}
 	
 	public void parse() throws IOException {
 		DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 		
-		this.response = new Response();
+		this.response = new ClientResponse();
 		this.response.setSocket(socket);
 		this.response.setRequest(this);
 		
@@ -85,7 +85,7 @@ public class Request {
 		return operation;
 	}
 
-	public Response getResponse() {
+	public ClientResponse getResponse() {
 		return response;
 	}
 	

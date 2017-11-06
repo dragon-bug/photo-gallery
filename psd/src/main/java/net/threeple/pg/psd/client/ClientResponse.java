@@ -10,21 +10,21 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.shared.constant.Operation;
 
-public class Response {
+public class ClientResponse {
 	public final static int SC_NOT_FOUND = 404;
 	public final static int SC_INTERNAL_SERVER_ERROR  = 500;
 	public final static int SC_BAD_REQUEST = 400;
 	public final static int SC_OK = 200;
 	public final static int SC_CREATED  = 201;
-	final Logger logger = LoggerFactory.getLogger(Response.class);
+	final Logger logger = LoggerFactory.getLogger(ClientResponse.class);
 	private byte[] body;
 	private Socket socket;
-	private Request request;
+	private ClientRequest request;
 	
-	public Response() {
+	public ClientResponse() {
 	}
 	
-	public void setRequest(Request request) {
+	public void setRequest(ClientRequest request) {
 		this.request = request;
 	}
 	
