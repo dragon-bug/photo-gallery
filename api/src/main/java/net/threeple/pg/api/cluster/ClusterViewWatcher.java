@@ -172,15 +172,16 @@ public class ClusterViewWatcher implements Runnable {
 	
 	private void require(Socket socket) throws IOException {
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+
+		writer.write("Require:ClusterView");
+		writer.newLine();
 		
-		writer.write("Response:port=" + this.port);
+		writer.write("response.port=" + this.port);
 		writer.newLine();
-		writer.write("Require:AllStorageNode");
-		writer.newLine();
-		writer.write("Require:AllPlacementGroup");
-		writer.newLine();
+		
 		writer.write("End");
 		writer.newLine();
+		
 		writer.flush();
 		
 		socket.close();
@@ -189,36 +190,44 @@ public class ClusterViewWatcher implements Runnable {
 	private void response(Socket socket) throws IOException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		
-		String t = null;
-		while((t = reader.readLine()) != null) {
-			if("Response:AllStorageNode".equals(t)) {
-				String v = null;
-				List<InetSocketAddress> list = new ArrayList<>();
-				while(!"End".equals((v = reader.readLine()))) {
-					int es = v.indexOf('=');
-					if(es > 0) {
-						int id = Integer.parseInt(v.substring(0, es));
-						v = v.substring(es + 1);
-						InetSocketAddress addr = CustomInetAddressParser.parse(v);
-						list.add(id, addr);
-						logger.debug("获得存储节点#{}的地址：{}", id, v);
+		String t = reader.readLine();
+		if("Response:ClusterView".equals(t) 
+				&& "Status:200".equals((t = reader.readLine()))) {
+			
+			List<InetSocketAddress> addrList = new ArrayList<>();
+			List<Integer> pgList = new ArrayList<>();
+			
+			int n = -1;
+			while(!"End".equals((t = reader.readLine()))) {
+				n = t.indexOf('=');
+				if(n > 0) {
+					int psdId = Integer.parseInt(t.substring(0, n));
+					t = t.substring(n + 1);
+					n = t.indexOf('<');
+					
+					if(n > 0) {
+						String address = t.substring(0, n);
+						InetSocketAddress isAddr = CustomInetAddressParser.parse(address);
+						addrList.add(psdId, isAddr);
+						t = t.substring(n + 1);
+						
+						while((n = t.indexOf(',')) > 0) {
+							int pgId = Integer.parseInt(t.substring(0, n));
+							pgList.add(pgId, psdId);
+							t = t.substring(n + 1);
+						}
+						
+						if(t.length() > 0) {
+							int pgId = Integer.parseInt(t);
+							pgList.add(pgId, psdId);
+						}
 					}
 				}
-				this.psdAddrs = list.toArray(new InetSocketAddress[0]);
-			} else if("Response:AllPlacementGroup".equals(t)) {
-				String v = null;
-				List<Integer> list = new ArrayList<>();
-				while(!"End".equals((v = reader.readLine()))) {
-					int gt = v.indexOf('>');
-					if(gt > 0) {
-						int id = Integer.parseInt(v.substring(0, gt));
-						int pid = Integer.parseInt(v.substring(gt + 1));
-						list.add(id, pid);
-						logger.debug("获得归置组#{}的归置：{}", id, pid);
-					}
-				}
-				this.placements = list.toArray(new Integer[0]);
 			}
+			this.psdAddrs = addrList.toArray(new InetSocketAddress[0]);
+			this.placements = pgList.toArray(new Integer[0]);
+		} else {
+			logger.error("没有收到正确的响应");
 		}
 		socket.close();
 	}

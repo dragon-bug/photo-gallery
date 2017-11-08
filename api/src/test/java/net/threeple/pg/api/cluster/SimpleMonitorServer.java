@@ -1,6 +1,6 @@
 package net.threeple.pg.api.cluster;
 
-import net.threeple.pg.mon.server.MonitorServer;
+import net.threeple.pg.mon.MonitorServer;
 
 public class SimpleMonitorServer {
 	
