@@ -13,6 +13,7 @@ public class RequestParser {
 			int n = line.indexOf(':');
 			String require = line.substring(n + 1).trim() + "Monilet";
 			request = new MoniletRequest();
+			request.setReader(reader);
 			request.setRequire(require);
 			
 			Map<String, String> body = new HashMap<>();

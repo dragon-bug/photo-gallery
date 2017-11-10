@@ -1,10 +1,12 @@
 package net.threeple.pg.mon.monilet;
 
+import java.io.BufferedReader;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MoniletRequest implements IMoniletRequest {
 	private String require;
+	private BufferedReader reader;
 	private Map<String, String> body = new HashMap<>();
 	
 	public String getRequire() {
@@ -18,6 +20,12 @@ public class MoniletRequest implements IMoniletRequest {
 	}
 	public void setBody(Map<String, String> body) {
 		this.body = body;
+	}
+	public BufferedReader getReader() {
+		return reader;
+	}
+	public void setReader(BufferedReader reader) {
+		this.reader = reader;
 	}
 	
 }
