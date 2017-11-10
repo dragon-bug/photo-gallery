@@ -2,26 +2,22 @@ package net.threeple.pg.api.cluster;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.exception.ClusterUnhealthyException;
+import net.threeple.pg.shared.config.ClusterMoniterFactory;
 import net.threeple.pg.shared.util.CustomInetAddressParser;
-import net.threeple.pg.shared.util.FileUtils;
 
 public class ClusterViewWatcher implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(ClusterViewWatcher.class);
@@ -85,7 +81,7 @@ public class ClusterViewWatcher implements Runnable {
 			server.bind(addr);
 			this.port = server.getLocalPort();
 			logger.info("哨兵启动成功，监听在{}端口", this.port);
-			require(getFirstUseableMonitor()); // 向集群监视器申请集群视图信息
+			require(ClusterMoniterFactory.getFirstUseableMonitor()); // 向集群监视器申请集群视图信息
 			while(true) {
 				Socket socket = server.accept();
 				try {
@@ -110,64 +106,6 @@ public class ClusterViewWatcher implements Runnable {
 				}
 			}
 		}
-	}
-	
-	private Socket getFirstUseableMonitor() {
-		Socket socket = null;
-		String as = null;
-		try {
-			as = getClusterMonitersConfig();
-			if(as == null || as.isEmpty()) {
-				logger.warn("可能未配置监视器地址或者所有的监视器都宕机了,等待3秒后重试");
-				Thread.sleep(1000 * 3);
-			} else {
-				int index = as.indexOf(",");
-				String address = (index > 0) ? as.substring(0, index) : as;
-				logger.info("获得监视器地址：{}", address);
-				as = (index > 0) ? as.substring(index + 1, as.length()) : "";
-				socket = new Socket();
-				logger.info("准备连接到监视器{}", address);
-				socket.connect(CustomInetAddressParser.parse(address), 1000 * 5);
-				logger.info("成功连接到监视器{}", address);
-			}
-			
-			logger.info("监视器哨兵完成初始化工作");
-		} catch (InterruptedException e1) {
-			logger.error("连接监视器的尝试被中断了,中断信息:{}", e1.getMessage());
-		} catch (IOException e2) {
-			logger.error("未能正确连接到监视器并同步集群信息,错误消息:{}", e2.getMessage());
-		}
-		return socket;
-	}
-	
-	private String getClusterMonitersConfig() throws IOException {
-		String monAddrs = System.getenv("PG_MONITORS");
-		if(monAddrs == null) {
-			logger.info("环境变量PG_MONITORS不存在，准备从配置文件读取");
-			FileInputStream fis = null;
-
-			URL url = this.getClass().getClassLoader().getResource("pg.conf");
-			if(url != null) {
-				fis = new FileInputStream(url.getPath());
-				logger.info("在类路径下找到配置文件，准备读取配置");
-			} else {
-				String path = FileUtils.joinPath(System.getProperty("user.home"), "pg.conf");
-				File file = new File(path);
-				if(!file.exists()) {
-					throw new IOException("监视器配置文件不存在");
-				}
-				fis = new FileInputStream(file);
-				logger.info("在用户家目录下找到配置文件，准备读取配置");
-			}
-			
-			Properties prope = new Properties();
-			prope.load(fis);
-			monAddrs = prope.getProperty("monitors");
-			logger.info("从配置文件获得监视器地址：{}", monAddrs);
-		} else {
-			logger.info("从环境变量获得监视器地址：{}", monAddrs);
-		}
-		return monAddrs;
 	}
 	
 	private void require(Socket socket) throws IOException {
