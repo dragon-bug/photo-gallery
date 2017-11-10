@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.psd.io.FileOperation;
+import net.threeple.pg.psd.monitor.Heartbeat;
 import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class Storage implements FileOperation {
@@ -18,6 +19,10 @@ public class Storage implements FileOperation {
 		this.id = _id;
 		this.root = _root;
 		this.placementGroupFactory = new PlacementGroupFactory();
+		Heartbeat heartbeat = new Heartbeat(_id);
+		Thread thread = new Thread(heartbeat, "Send-Heartbeat-Thread");
+		thread.setDaemon(true);
+		thread.start();
 	}
 	
 	public int getId() {

@@ -36,14 +36,12 @@ public class PsdServer {
 		} catch (IOException e) {
 			logger.error("存储节点{}启动失败，失败信息：{}", this.storage.getId(), e.getMessage());
 		} finally {
-			if(server != null) {
-				if(!server.isClosed()) {
-					try {
-						server.close();
-						server = null;
-					} catch (IOException e) {
-						logger.error("存储节点{}无法正常关闭，失败信息：{}", this.storage.getId(), e.getMessage());
-					}
+			if(server != null && !server.isClosed()) {
+				try {
+					server.close();
+					server = null;
+				} catch (IOException e) {
+					logger.error("存储节点{}无法正常关闭，失败信息：{}", this.storage.getId(), e.getMessage());
 				}
 			}
 		}
