@@ -1,16 +1,15 @@
-package net.threeple.pg.mon.server;
+package net.threeple.pg.mon;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.threeple.pg.mon.service.Processor;
-import net.threeple.pg.mon.service.Request;
+import net.threeple.pg.mon.monilet.RequestDispatcher;
+import net.threeple.pg.mon.monilet.impl.ClusterViewMonilet;
+import net.threeple.pg.mon.monilet.impl.HeartbeatMonilet;
 
 public class MonitorServer {
 	final Logger logger = LoggerFactory.getLogger(MonitorServer.class);
@@ -23,15 +22,19 @@ public class MonitorServer {
 	}
 	
 	public void start() {
+		RequestDispatcher dispatcher = new RequestDispatcher();
+		dispatcher.addMonilet(new ClusterViewMonilet());
+		dispatcher.addMonilet(new HeartbeatMonilet());
+		
 		ServerSocket server = null;
 		try {
 			server = new ServerSocket(this.port);
 			logger.info("集群视图监控节点#{}启动成功, 监听在{}端口", this.name, this.port);
-			Executor executor = Executors.newCachedThreadPool();
+			
 			while(true) {
 				Socket socket = server.accept();
 				logger.info("接收到来自{}的连接", socket.getInetAddress());
-				executor.execute(new Processor(new Request(socket)));
+				dispatcher.dispatch(socket);
 				logger.info("成功处理来自{}的请求", socket.getInetAddress());
 			}
 		} catch (IOException e) {

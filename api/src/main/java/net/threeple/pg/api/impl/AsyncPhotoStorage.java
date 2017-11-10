@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.async.SimpleFuture;
 import net.threeple.pg.api.model.IRequest;
-import net.threeple.pg.api.model.Request;
+import net.threeple.pg.api.model.FileRequest;
 import net.threeple.pg.api.model.Response;
 import net.threeple.pg.shared.constant.Operation;
 
@@ -43,7 +43,7 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 
 	@Override
 	public Future<Response> asyncDownload(String uri) {
-		IRequest request = new Request();
+		IRequest request = new FileRequest();
 		request.setOperation(Operation.DOWNLOAD);
 		request.setUri(uri);
 		Future<Response> future = new SimpleFuture();
@@ -66,7 +66,7 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 
 	@Override
 	public Future<Response> asyncUpload(String uri, byte[] body) {
-		IRequest request = new Request();
+		IRequest request = new FileRequest();
 		request.setOperation(Operation.UPLOAD);
 		request.setUri(uri);
 		request.setBody(body);
@@ -90,7 +90,7 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 	
 	@Override
 	public Future<Response> asyncDelete(String uri) {
-		IRequest request = new Request();
+		IRequest request = new FileRequest();
 		request.setOperation(Operation.DELETE);
 		request.setUri(uri);
 		Future<Response> future = new SimpleFuture();

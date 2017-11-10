@@ -2,26 +2,22 @@ package net.threeple.pg.api.cluster;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.exception.ClusterUnhealthyException;
+import net.threeple.pg.shared.config.ClusterMoniterFactory;
 import net.threeple.pg.shared.util.CustomInetAddressParser;
-import net.threeple.pg.shared.util.FileUtils;
 
 public class ClusterViewWatcher implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(ClusterViewWatcher.class);
@@ -85,7 +81,7 @@ public class ClusterViewWatcher implements Runnable {
 			server.bind(addr);
 			this.port = server.getLocalPort();
 			logger.info("哨兵启动成功，监听在{}端口", this.port);
-			require(getFirstUseableMonitor()); // 向集群监视器申请集群视图信息
+			require(ClusterMoniterFactory.getFirstUseableMonitor()); // 向集群监视器申请集群视图信息
 			while(true) {
 				Socket socket = server.accept();
 				try {
@@ -112,75 +108,18 @@ public class ClusterViewWatcher implements Runnable {
 		}
 	}
 	
-	private Socket getFirstUseableMonitor() {
-		Socket socket = null;
-		String as = null;
-		try {
-			as = getClusterMonitersConfig();
-			if(as == null || as.isEmpty()) {
-				logger.warn("可能未配置监视器地址或者所有的监视器都宕机了,等待3秒后重试");
-				Thread.sleep(1000 * 3);
-			} else {
-				int index = as.indexOf(",");
-				String address = (index > 0) ? as.substring(0, index) : as;
-				logger.info("获得监视器地址：{}", address);
-				as = (index > 0) ? as.substring(index + 1, as.length()) : "";
-				socket = new Socket();
-				logger.info("准备连接到监视器{}", address);
-				socket.connect(CustomInetAddressParser.parse(address), 1000 * 5);
-				logger.info("成功连接到监视器{}", address);
-			}
-			
-			logger.info("监视器哨兵完成初始化工作");
-		} catch (InterruptedException e1) {
-			logger.error("连接监视器的尝试被中断了,中断信息:{}", e1.getMessage());
-		} catch (IOException e2) {
-			logger.error("未能正确连接到监视器并同步集群信息,错误消息:{}", e2.getMessage());
-		}
-		return socket;
-	}
-	
-	private String getClusterMonitersConfig() throws IOException {
-		String monAddrs = System.getenv("PG_MONITORS");
-		if(monAddrs == null) {
-			logger.info("环境变量PG_MONITORS不存在，准备从配置文件读取");
-			FileInputStream fis = null;
-
-			URL url = this.getClass().getClassLoader().getResource("pg.conf");
-			if(url != null) {
-				fis = new FileInputStream(url.getPath());
-				logger.info("在类路径下找到配置文件，准备读取配置");
-			} else {
-				String path = FileUtils.joinPath(System.getProperty("user.home"), "pg.conf");
-				File file = new File(path);
-				if(!file.exists()) {
-					throw new IOException("监视器配置文件不存在");
-				}
-				fis = new FileInputStream(file);
-				logger.info("在用户家目录下找到配置文件，准备读取配置");
-			}
-			
-			Properties prope = new Properties();
-			prope.load(fis);
-			monAddrs = prope.getProperty("monitors");
-			logger.info("从配置文件获得监视器地址：{}", monAddrs);
-		} else {
-			logger.info("从环境变量获得监视器地址：{}", monAddrs);
-		}
-		return monAddrs;
-	}
-	
 	private void require(Socket socket) throws IOException {
 		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+
+		writer.write("Require:ClusterView");
+		writer.newLine();
 		
-		writer.write("Response:port=" + this.port);
+		writer.write("response.port=" + this.port);
 		writer.newLine();
-		writer.write("Require:AllStorageNode");
-		writer.newLine();
-		writer.write("Require:AllPlacementGroup");
-		writer.newLine();
+		
 		writer.write("End");
 		writer.newLine();
+		
 		writer.flush();
 		
 		socket.close();
@@ -189,36 +128,44 @@ public class ClusterViewWatcher implements Runnable {
 	private void response(Socket socket) throws IOException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		
-		String t = null;
-		while((t = reader.readLine()) != null) {
-			if("Response:AllStorageNode".equals(t)) {
-				String v = null;
-				List<InetSocketAddress> list = new ArrayList<>();
-				while(!"End".equals((v = reader.readLine()))) {
-					int es = v.indexOf('=');
-					if(es > 0) {
-						int id = Integer.parseInt(v.substring(0, es));
-						v = v.substring(es + 1);
-						InetSocketAddress addr = CustomInetAddressParser.parse(v);
-						list.add(id, addr);
-						logger.debug("获得存储节点#{}的地址：{}", id, v);
+		String t = reader.readLine();
+		if("Response:ClusterView".equals(t) 
+				&& "Status:200".equals((t = reader.readLine()))) {
+			
+			List<InetSocketAddress> addrList = new ArrayList<>();
+			List<Integer> pgList = new ArrayList<>();
+			
+			int n = -1;
+			while(!"End".equals((t = reader.readLine()))) {
+				n = t.indexOf('=');
+				if(n > 0) {
+					int psdId = Integer.parseInt(t.substring(0, n));
+					t = t.substring(n + 1);
+					n = t.indexOf('<');
+					
+					if(n > 0) {
+						String address = t.substring(0, n);
+						InetSocketAddress isAddr = CustomInetAddressParser.parse(address);
+						addrList.add(psdId, isAddr);
+						t = t.substring(n + 1);
+						
+						while((n = t.indexOf(',')) > 0) {
+							int pgId = Integer.parseInt(t.substring(0, n));
+							pgList.add(pgId, psdId);
+							t = t.substring(n + 1);
+						}
+						
+						if(t.length() > 0) {
+							int pgId = Integer.parseInt(t);
+							pgList.add(pgId, psdId);
+						}
 					}
 				}
-				this.psdAddrs = list.toArray(new InetSocketAddress[0]);
-			} else if("Response:AllPlacementGroup".equals(t)) {
-				String v = null;
-				List<Integer> list = new ArrayList<>();
-				while(!"End".equals((v = reader.readLine()))) {
-					int gt = v.indexOf('>');
-					if(gt > 0) {
-						int id = Integer.parseInt(v.substring(0, gt));
-						int pid = Integer.parseInt(v.substring(gt + 1));
-						list.add(id, pid);
-						logger.debug("获得归置组#{}的归置：{}", id, pid);
-					}
-				}
-				this.placements = list.toArray(new Integer[0]);
 			}
+			this.psdAddrs = addrList.toArray(new InetSocketAddress[0]);
+			this.placements = pgList.toArray(new Integer[0]);
+		} else {
+			logger.error("没有收到正确的响应");
 		}
 		socket.close();
 	}

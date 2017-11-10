@@ -9,9 +9,9 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.threeple.pg.psd.client.RequestHandler;
+import net.threeple.pg.psd.client.ClientRequestHandler;
 import net.threeple.pg.psd.persistent.Storage;
-import net.threeple.pg.psd.client.Request;
+import net.threeple.pg.psd.client.ClientRequest;
 
 public class PsdServer {
 	Logger logger = LoggerFactory.getLogger(PsdServer.class);
@@ -31,19 +31,17 @@ public class PsdServer {
 			while(true) {
 				Socket socket = server.accept();
 				logger.info("获得来自{}的请求", socket.getInetAddress());
-				executor.execute(new RequestHandler(new Request(socket), this.storage));
+				executor.execute(new ClientRequestHandler(new ClientRequest(socket), this.storage));
 			}
 		} catch (IOException e) {
 			logger.error("存储节点{}启动失败，失败信息：{}", this.storage.getId(), e.getMessage());
 		} finally {
-			if(server != null) {
-				if(!server.isClosed()) {
-					try {
-						server.close();
-						server = null;
-					} catch (IOException e) {
-						logger.error("存储节点{}无法正常关闭，失败信息：{}", this.storage.getId(), e.getMessage());
-					}
+			if(server != null && !server.isClosed()) {
+				try {
+					server.close();
+					server = null;
+				} catch (IOException e) {
+					logger.error("存储节点{}无法正常关闭，失败信息：{}", this.storage.getId(), e.getMessage());
 				}
 			}
 		}
