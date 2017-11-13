@@ -18,48 +18,65 @@ public class Heartbeat implements Runnable {
 		this.id = _id;
 	}
 	
-	@Override
-	public void run() {
-		Socket socket = null;
-		try {
-			socket = ClusterMoniterFactory.getFirstUseableMonitor();
-		} catch (IOException e) {
-			logger.error("无法获得监视器连接，错误信息：{}", e.getMessage());
-		}
+	private void connect() throws IOException {
+		Socket socket = ClusterMoniterFactory.getFirstUseableMonitor();
 		
 		try {
-			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-			writer.write("Require:Heartbeat");
-			writer.newLine();
-			
-			writer.write("id=" + this.id);
-			writer.newLine();
-			
-			writer.write("End");
-			writer.newLine();
-			
-			writer.flush();
-			
-			while(true) {
-				writer.write("pit-a-pat");
-				writer.newLine();
-				writer.flush();
-				
+			pitAPat(socket);
+		} catch (IOException e) {
+			logger.error("存储节点#{}向监视器发送心跳包失败，错误信息：{}", this.id, e.getMessage());
+		} finally {
+			if(socket != null && socket.isConnected()) {
 				try {
-					Thread.sleep(5 * 1000);
-				} catch (InterruptedException e) {
+					socket.close();
+				} catch (IOException e) {
+					logger.error("无法正常关闭与监视器的连接");
 				}
 			}
-			
-		} catch (IOException e) {
-			logger.error("无法向监视器发送数据，错误信息：{}", e.getMessage());
 		}
 		
-		if(socket != null && socket.isConnected()) {
+	}
+	
+	private void pitAPat(Socket socket) throws IOException {
+		
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+		writer.write("Require:Heartbeat");
+		writer.newLine();
+		
+		writer.write("id=" + this.id);
+		writer.newLine();
+		
+		writer.write("End");
+		writer.newLine();
+		
+		writer.flush();
+		
+		while(true) {
+			writer.write("pit-a-pat");
+			writer.newLine();
+			writer.flush();
+			
 			try {
-				socket.close();
+				Thread.sleep(5 * 1000);
+			} catch (InterruptedException e) {
+			}
+		}
+		
+		
+	}
+	
+	@Override
+	public void run() {
+		while(true) {
+			try {
+				connect();
 			} catch (IOException e) {
-				logger.error("无法正常关闭与监视器的连接");
+				logger.error("存储节点#{}向监视器发送心跳包失败，错误信息：{}", this.id, e.getMessage());
+			}
+			try {
+				Thread.sleep(30 * 1000);
+			} catch (InterruptedException e) {
+				
 			}
 		}
 	}
