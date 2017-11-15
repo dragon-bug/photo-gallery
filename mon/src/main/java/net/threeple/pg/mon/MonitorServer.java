@@ -1,8 +1,11 @@
 package net.threeple.pg.mon;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,9 +18,11 @@ public class MonitorServer {
 	final Logger logger = LoggerFactory.getLogger(MonitorServer.class);
 	private String name;
 	private int port;
+	private String address;
 	
-	public MonitorServer(String _name, int _port) {
+	public MonitorServer(String _name, String _address, int _port) {
 		this.name = _name;
+		this.address = _address;
 		this.port = _port;
 	}
 	
@@ -28,8 +33,11 @@ public class MonitorServer {
 		
 		ServerSocket server = null;
 		try {
-			server = new ServerSocket(this.port);
-			logger.info("集群视图监控节点#{}启动成功, 监听在{}端口", this.name, this.port);
+			InetAddress inetAddr = InetAddress.getByName(this.address);
+			SocketAddress socketAddr = new InetSocketAddress(inetAddr, this.port);
+			server = new ServerSocket();
+			server.bind(socketAddr);
+			logger.info("集群视图监控节点#{}启动成功, 监听在{}", this.name, this.address + ":" + this.port);
 			
 			while(true) {
 				Socket socket = server.accept();
