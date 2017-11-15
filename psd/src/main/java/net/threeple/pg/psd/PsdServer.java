@@ -1,8 +1,11 @@
 package net.threeple.pg.psd;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -23,10 +26,13 @@ public class PsdServer {
 		this.executor = Executors.newCachedThreadPool();
 	}
 	
-	public void startup(int port) {
+	public void startup(String address, int port) {
 		ServerSocket server = null;
 		try {
-			server = new ServerSocket(port);
+			InetAddress inetAddr = InetAddress.getByName(address);
+			SocketAddress socketAddr = new InetSocketAddress(inetAddr, port);
+			server = new ServerSocket();
+			server.bind(socketAddr);
 			logger.info("存储节点{}启动成功，监听在{}端口", this.storage.getId(), port);
 			while(true) {
 				Socket socket = server.accept();
