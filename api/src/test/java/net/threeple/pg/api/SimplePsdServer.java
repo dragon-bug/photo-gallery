@@ -17,7 +17,7 @@ public class SimplePsdServer {
 					Storage storage = new Storage(id, FileUtils.joinPath(SimplePsdServer.getStoragePath(), "\\psd" + id));
 					
 					PsdServer server = new PsdServer(storage);
-					server.startup(port + id);
+					server.startup("127.0.0.1", port + id);
 					
 				}
 				

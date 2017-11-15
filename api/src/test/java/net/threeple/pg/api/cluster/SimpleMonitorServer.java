@@ -9,7 +9,7 @@ public class SimpleMonitorServer {
 
 			@Override
 			public void run() {
-				MonitorServer server = new MonitorServer("mon0", 6661);
+				MonitorServer server = new MonitorServer("mon0", "127.0.0.1", 6661);
 				server.start();
 			}
 			
