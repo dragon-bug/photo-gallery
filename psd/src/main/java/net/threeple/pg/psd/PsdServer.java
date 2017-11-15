@@ -33,7 +33,7 @@ public class PsdServer {
 			SocketAddress socketAddr = new InetSocketAddress(inetAddr, port);
 			server = new ServerSocket();
 			server.bind(socketAddr);
-			logger.info("存储节点{}启动成功，监听在{}端口", this.storage.getId(), port);
+			logger.info("存储节点{}启动成功，监听在{}", this.storage.getId(), address + ":" + port);
 			while(true) {
 				Socket socket = server.accept();
 				logger.info("获得来自{}的请求", socket.getInetAddress());
