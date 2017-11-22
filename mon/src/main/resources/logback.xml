@@ -11,6 +11,30 @@
     </encoder>
   </appender>
   
+    <!-- 按日期区分的滚动日志 -->
+	<appender name="ERROR-OUT"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${Log_Dir}${App_Name}-error.log</file>
+	
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss} [%class:%line] - %m%n</pattern>
+		</encoder>
+	
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>ERROR</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+	
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- 非当天的Log文件压缩备份 -->
+			<fileNamePattern>D:\var\log\image-factory\error.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+	
+			<!-- keep 30 days' worth of history -->
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+	</appender>
+  
   <!-- 按日期区分的滚动日志 -->
   <appender name="APP" class="ch.qos.logback.core.rolling.RollingFileAppender">
       <file>${Log_Dir}${App_Name}-app.log</file>
@@ -65,6 +89,7 @@
   <root level="info">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="APP" />
+    <appender-ref ref="ERROR-OUT" />
     <appender-ref ref="DEBUG-OUT" />
   </root>
 </configuration>
