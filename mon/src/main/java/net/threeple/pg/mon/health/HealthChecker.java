@@ -13,6 +13,7 @@ public class HealthChecker implements Runnable {
 	
 	@Override
 	public void run() {
+		logger.info("健康检查器启动");
 		while(true) {
 			for(Entry<Integer, Long> entry : beatMap.entrySet()) {
 				long interval = System.currentTimeMillis() - entry.getValue();

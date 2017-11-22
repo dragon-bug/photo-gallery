@@ -13,10 +13,6 @@ import net.threeple.pg.mon.health.HeartbeatMonitor;
 
 public class Bootstrap {
 	
-	public void start(String[] args) {
-		
-	}
-	
 	public static void main(String[] args) {
 		
 		Option nameOpt = Option.builder("name").required().hasArg().argName("name").desc("The monitor's name").build();
@@ -35,10 +31,6 @@ public class Bootstrap {
 			int port = Integer.parseInt(cmd.getOptionValue("port"));
 			InetAddress address = InetAddress.getByName(cmd.getOptionValue("addr"));
 			
-			// 启动监视服务器
-			MonitorServer server = new MonitorServer(name, address, port);
-			server.start();
-			
 			// 启动健康检查器
 			HealthChecker hc = new HealthChecker();
 			Thread hcThread = new Thread(hc, "Health-Check-Thread");
@@ -49,6 +41,10 @@ public class Bootstrap {
 			Thread hmThread = new Thread(new HeartbeatMonitor(address, hc), "Heartbeat-Monitor-Thread");
 			hmThread.setDaemon(true);
 			hmThread.start();
+			
+			// 启动监视服务器
+			MonitorServer server = new MonitorServer(name, address, port);
+			server.start();
 			
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
