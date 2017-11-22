@@ -7,7 +7,7 @@
  */
  allprojects {
  	group "net.threeple.pg"
- 	version "0.6.7-16"
+ 	version "0.6.8"
  }
 
 subprojects{
