@@ -4,7 +4,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class CustomInetAddressParser {
+	final static Logger logger = LoggerFactory.getLogger(CustomInetAddressParser.class);
 	public static InetSocketAddress parse(String address) {
 		int colon = address.indexOf(':');
 		String host = address.substring(0, colon);
@@ -15,8 +19,7 @@ public class CustomInetAddressParser {
 			inetAddr = InetAddress.getByName(host);
 			inetSocketAddr = new InetSocketAddress(inetAddr, port);
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("无法解析地址：{}，错误信息：{}", address, e.getMessage());
 		}
 		return inetSocketAddr;
 	}
