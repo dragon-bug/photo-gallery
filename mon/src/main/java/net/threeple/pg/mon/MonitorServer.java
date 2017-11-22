@@ -12,15 +12,14 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.mon.monilet.RequestDispatcher;
 import net.threeple.pg.mon.monilet.impl.ClusterViewMonilet;
-import net.threeple.pg.mon.monilet.impl.HeartbeatMonilet;
 
 public class MonitorServer {
 	final Logger logger = LoggerFactory.getLogger(MonitorServer.class);
 	private String name;
 	private int port;
-	private String address;
+	private InetAddress address;
 	
-	public MonitorServer(String _name, String _address, int _port) {
+	public MonitorServer(String _name, InetAddress _address, int _port) {
 		this.name = _name;
 		this.address = _address;
 		this.port = _port;
@@ -29,12 +28,10 @@ public class MonitorServer {
 	public void start() {
 		RequestDispatcher dispatcher = new RequestDispatcher();
 		dispatcher.addMonilet(new ClusterViewMonilet());
-		dispatcher.addMonilet(new HeartbeatMonilet());
 		
 		ServerSocket server = null;
 		try {
-			InetAddress inetAddr = InetAddress.getByName(this.address);
-			SocketAddress socketAddr = new InetSocketAddress(inetAddr, this.port);
+			SocketAddress socketAddr = new InetSocketAddress(this.address, this.port);
 			server = new ServerSocket();
 			server.bind(socketAddr);
 			logger.info("集群视图监控节点#{}启动成功, 监听在{}", this.name, this.address + ":" + this.port);

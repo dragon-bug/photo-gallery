@@ -1,14 +1,17 @@
 package net.threeple.pg.psd.monitor;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.threeple.pg.shared.config.ClusterMoniterFactory;
+import net.threeple.pg.shared.config.ClusterConfig;
+import net.threeple.pg.shared.util.NumberUtils;
 
 public class Heartbeat implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(Heartbeat.class);
@@ -18,66 +21,44 @@ public class Heartbeat implements Runnable {
 		this.id = _id;
 	}
 	
-	private void connect() throws IOException {
-		Socket socket = ClusterMoniterFactory.getFirstUseableMonitor();
-		
-		try {
-			pitAPat(socket);
-		} catch (IOException e) {
-			logger.error("存储节点#{}向监视器发送心跳包失败，错误信息：{}", this.id, e.getMessage());
-		} finally {
-			if(socket != null && socket.isConnected()) {
-				try {
-					socket.close();
-				} catch (IOException e) {
-					logger.error("无法正常关闭与监视器的连接");
-				}
-			}
-		}
-		
-	}
-	
-	private void pitAPat(Socket socket) throws IOException {
-		
-		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-		writer.write("Require:Heartbeat");
-		writer.newLine();
-		
-		writer.write("id=" + this.id);
-		writer.newLine();
-		
-		writer.write("End");
-		writer.newLine();
-		
-		writer.flush();
-		
-		while(true) {
-			writer.write("pit-a-pat");
-			writer.newLine();
-			writer.flush();
-			
-			try {
-				Thread.sleep(5 * 1000);
-			} catch (InterruptedException e) {
-			}
-		}
-		
-		
+	private InetAddress getMonitorAddress() throws UnknownHostException {
+		InetAddress addr = null;
+		String as = ClusterConfig.getMonitorAddresses();
+		int index = as.indexOf(',');
+		as = (index > 0) ? as.substring(0, index) : as;
+		index = as.indexOf(':');
+		as = as.substring(0, index);
+		addr = InetAddress.getByName(as);
+		return addr;
 	}
 	
 	@Override
 	public void run() {
-		while(true) {
-			try {
-				connect();
-			} catch (IOException e) {
-				logger.error("存储节点#{}向监视器发送心跳包失败，错误信息：{}", this.id, e.getMessage());
+		logger.info("存储节点#{}发送心跳包的线程启动", this.id);
+		DatagramSocket socket = null;
+		try {
+			socket = new DatagramSocket();
+			InetAddress addr = getMonitorAddress();
+			byte[] buf = NumberUtils.intToByte4(this.id);
+			DatagramPacket packet = new DatagramPacket(buf, 4, addr, 7766);
+			
+			while(true) {
+				try {
+					socket.send(packet);
+				} catch (IOException e) {
+					logger.warn("发送心跳包失败");
+				}
+				try {
+					Thread.sleep(5 * 1000);
+				} catch (InterruptedException e) {
+				}
 			}
-			try {
-				Thread.sleep(30 * 1000);
-			} catch (InterruptedException e) {
-				
-			}
+		} catch (SocketException e1) {
+			logger.error("无法创建数据报套接字，错误信息：{}", e1.getMessage());
+		} catch (UnknownHostException e1) {
+			logger.error("无法解析主机名，错误信息：{}", e1.getMessage());
+		} finally {
+			socket.close();
 		}
 	}
 

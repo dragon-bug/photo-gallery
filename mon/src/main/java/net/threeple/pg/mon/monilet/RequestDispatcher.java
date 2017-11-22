@@ -15,9 +15,6 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.threeple.pg.mon.monilet.impl.ClusterViewMonilet;
-import net.threeple.pg.mon.monilet.impl.HeartbeatMonilet;
-
 public class RequestDispatcher {
 	final Logger logger = LoggerFactory.getLogger(RequestDispatcher.class);
 	private Executor executor = Executors.newCachedThreadPool();
@@ -97,11 +94,5 @@ public class RequestDispatcher {
 				}
 			}
 		});
-	}
-	
-	public static void main(String[] args) {
-		RequestDispatcher dispatcher = new RequestDispatcher();
-		dispatcher.addMonilet(new ClusterViewMonilet());
-		dispatcher.addMonilet(new HeartbeatMonilet());
 	}
 }
