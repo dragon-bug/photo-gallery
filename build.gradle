@@ -60,6 +60,13 @@ subprojects{
 	}
 }
 
+project(':admin') {
+	dependencies {
+		testImplementation project(':psd')
+		testImplementation project(':mon')
+	}
+}
+
 project(':api') {
 	apply plugin: 'maven-publish'
 
