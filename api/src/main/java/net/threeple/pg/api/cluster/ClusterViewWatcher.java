@@ -81,7 +81,7 @@ public class ClusterViewWatcher implements Runnable {
 			server.bind(addr);
 			this.port = server.getLocalPort();
 			logger.info("哨兵启动成功，监听在{}端口", this.port);
-			require(ClusterMoniterFactory.getFirstUseableMonitor()); // 向集群监视器申请集群视图信息
+			require(ClusterMoniterFactory.getFirstUseableConnection()); // 向集群监视器申请集群视图信息
 			while(true) {
 				Socket socket = server.accept();
 				try {
