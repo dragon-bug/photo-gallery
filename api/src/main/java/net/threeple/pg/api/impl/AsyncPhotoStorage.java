@@ -53,7 +53,6 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		request.setUri(uri);
 		Future<Response> future = new SimpleFuture();
 		request.setFuture(future);
-		logger.info("完成组装文件{}的下载请求，准备放入工作队列", uri);
 		try {
 			lock.lock();
 			this.queue.offer(request, 1, TimeUnit.SECONDS);
@@ -81,7 +80,6 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		request.setBody(body);
 		Future<Response> future = new SimpleFuture();
 		request.setFuture(future);
-		logger.info("完成组装文件{}的上传请求，准备放入工作队列", uri);
 		try {
 			lock.lock();
 			this.queue.offer(request, 1, TimeUnit.SECONDS);
@@ -104,7 +102,6 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		request.setUri(uri);
 		Future<Response> future = new SimpleFuture();
 		request.setFuture(future);
-		logger.info("完成组装文件{}的删除请求，准备放入工作队列", uri);
 		try {
 			lock.lock();
 			this.queue.offer(request, 1, TimeUnit.SECONDS);
@@ -127,7 +124,6 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 				createWorker();
 			}
 		} else { // 没有正在工作的工人
-			logger.info("缺少工作的工人，请一个...");
 			createWorker();
 		}
 	}
