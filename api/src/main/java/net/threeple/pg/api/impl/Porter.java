@@ -1,7 +1,6 @@
 package net.threeple.pg.api.impl;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -17,7 +16,6 @@ import net.threeple.pg.api.handler.DownloadHandler;
 import net.threeple.pg.api.handler.Handler;
 import net.threeple.pg.api.handler.UploadHandler;
 import net.threeple.pg.api.model.IRequest;
-import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class Porter implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(Porter.class);
@@ -26,7 +24,6 @@ public class Porter implements Runnable {
 	private final AsyncPhotoStorage photoStorage;
 	private final int id;
 	private final ClusterViewWatcher watcher;
-	private final int pgQuantity;
 	private static AtomicInteger instanceCounter = new AtomicInteger();
 	
 	public Porter(AsyncPhotoStorage _photoStorage) {
@@ -34,7 +31,6 @@ public class Porter implements Runnable {
 		this.queue = _photoStorage.getQueue();
 		this.id = instanceCounter.getAndIncrement();
 		this.watcher = _photoStorage.getWatcher();
-		this.pgQuantity = watcher.getPlacementQuantity();
 		logger.info("工人#{}被唤醒", this.id);
 	}
 
@@ -51,21 +47,15 @@ public class Porter implements Runnable {
 		uploadHandler.setNext(deleteHandler);
 		
 		IRequest request = null;
+		Socket socket = null;
 		try {
 			logger.debug("工人#{}完成准备工作...", this.id);
 			while ((request = this.queue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS)) != null) {
 				String uri = request.getUri();
 				logger.info("工人#{}获得{}的{}工作,工作序号:{}", this.id, uri, request.getOperation(), quantity);
-				Socket socket = new Socket();
-				request.setSocket(socket);
 				try {
-					int placement = PlacementCalculator.calculate(uri, this.pgQuantity);
-					logger.debug("获得文件{}的归置：{}", uri, placement);
-					
-					InetSocketAddress address = watcher.getPsdAddress(placement);
-					socket.connect(address, 1000 * 5);
-					logger.info("成功连接至存储节点：{}", address);
-					
+					socket = watcher.getPsdConnection(uri);
+					request.setSocket(socket);
 					downloadHandler.handle(request);
 					logger.info("完成文件{}的{}工作", uri, request.getOperation());
 				} catch (IOException e) {

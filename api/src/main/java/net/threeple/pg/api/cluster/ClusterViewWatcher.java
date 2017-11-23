@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import net.threeple.pg.api.exception.ClusterUnhealthyException;
 import net.threeple.pg.shared.config.ClusterMoniterFactory;
 import net.threeple.pg.shared.util.CustomInetAddressParser;
+import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class ClusterViewWatcher implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(ClusterViewWatcher.class);
@@ -26,11 +27,9 @@ public class ClusterViewWatcher implements Runnable {
 	private int port;
 	private final ReentrantLock lock = new ReentrantLock();
 	private volatile boolean initiated;
+	private int pgQuantity;
 	
-	public InetSocketAddress getPsdAddress(int placement) throws ClusterUnhealthyException {
-		if(!this.initiated) {
-			waitInit();
-		}
+	private InetSocketAddress getPsdAddress(int placement) throws ClusterUnhealthyException {
 		int pid = placements[placement];
 		InetSocketAddress address = this.psdAddrs[pid];
 		if(address == null) {
@@ -42,11 +41,15 @@ public class ClusterViewWatcher implements Runnable {
 		
 	}
 	
-	public int getPlacementQuantity() {
-		if(!this.initiated) {
-			waitInit();
+	private int getPlacementQuantity() {
+		if(this.pgQuantity > 0) {
+			return this.pgQuantity;
+		} else {
+			if(!this.initiated) {
+				waitInit();
+			}
+			return placements.length;
 		}
-		return placements.length;
 	}
 	
 	private void waitInit() {
@@ -63,8 +66,9 @@ public class ClusterViewWatcher implements Runnable {
 		this.initiated = true;
 	}
 	
-	public Socket getPsdConnection(int placement) 
+	public Socket getPsdConnection(String uri) 
 			throws InterruptedException, ClusterUnhealthyException, IOException {
+		int placement = PlacementCalculator.calculate(uri, getPlacementQuantity());
 		Socket socket = new Socket();
 		InetSocketAddress address = getPsdAddress(placement);
 		socket.connect(address, 5 * 1000);
