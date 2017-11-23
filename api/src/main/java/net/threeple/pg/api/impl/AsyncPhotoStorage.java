@@ -111,20 +111,15 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 	}
 
 	private void ring() {
-		try {
-			lock.lock();
-			if(this.workerCount.get() > 0) {
-				if (this.queue.size() > this.busyThreshold.get()) {
-					logger.info("工作太忙,添个工人帮忙...");
-					this.busyThreshold.getAndAdd(STEP);
-					createWorker();
-				}
-			} else { // 没有正在工作的工人
-				logger.info("缺少工作的工人，请一个...");
+		if(this.workerCount.get() > 0) {
+			if (this.queue.size() > this.busyThreshold.get()) {
+				logger.info("工作太忙,添个工人帮忙...");
+				this.busyThreshold.getAndAdd(STEP);
 				createWorker();
 			}
-		} finally {
-			lock.unlock();
+		} else { // 没有正在工作的工人
+			logger.info("缺少工作的工人，请一个...");
+			createWorker();
 		}
 	}
 	
