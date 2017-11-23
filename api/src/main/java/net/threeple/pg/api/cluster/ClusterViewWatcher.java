@@ -10,7 +10,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,6 @@ public class ClusterViewWatcher implements Runnable {
 	private InetSocketAddress[] psdAddrs;
 	private Integer[] placements;
 	private int port;
-	private final ReentrantLock lock = new ReentrantLock();
 	private volatile boolean initiated;
 	private int pgQuantity;
 	
@@ -95,14 +93,8 @@ public class ClusterViewWatcher implements Runnable {
 			require(ClusterMoniterFactory.getFirstUseableConnection()); // 向集群监视器申请集群视图信息
 			while(true) {
 				Socket socket = server.accept();
-				try {
-					lock.lock();
-					response(socket); // 接收集群监视器发回的集群视图信息
-					logger.info("哨兵完成同步集群视图的工作");
-				} finally {
-					lock.unlock();
-				}
-				
+				response(socket); // 接收集群监视器发回的集群视图信息
+				logger.info("哨兵完成同步集群视图的工作");
 			}
 		} catch (IOException e) {
 			logger.error("哨兵启动失败，错误信息:{}", e.getMessage());
