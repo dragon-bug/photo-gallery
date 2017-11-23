@@ -40,14 +40,13 @@ public class ClusterViewWatcher implements Runnable {
 	}
 	
 	private int getPlacementQuantity() {
-		if(this.pgQuantity > 0) {
-			return this.pgQuantity;
-		} else {
+		if(this.pgQuantity <= 0) {
 			if(!this.initiated) {
 				waitInit();
 			}
-			return placements.length;
+			this.pgQuantity = placements.length;
 		}
+		return this.pgQuantity;
 	}
 	
 	private void waitInit() {
