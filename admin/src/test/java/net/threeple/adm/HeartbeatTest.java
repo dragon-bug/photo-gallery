@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.mon.health.HealthChecker;
 import net.threeple.pg.mon.health.HeartbeatMonitor;
-import net.threeple.pg.psd.monitor.Heartbeat;
+import net.threeple.pg.psd.health.Heartbeat;
 
 public class HeartbeatTest {
 	final Logger logger = LoggerFactory.getLogger(HeartbeatTest.class);

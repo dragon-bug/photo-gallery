@@ -7,10 +7,12 @@ import java.security.MessageDigest;
 
 import org.apache.commons.codec.binary.Hex;
 
+import net.threeple.pg.shared.config.ClusterConfig;
 import net.threeple.pg.shared.util.FileUtils;
 import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class ComparsionUtils {
+	private static int pgQuantity = ClusterConfig.getPlacementGroupQuantity(); 
 	
 	public static String digest(byte[] data) throws Exception {
 		MessageDigest md = MessageDigest.getInstance("MD5");
@@ -21,7 +23,7 @@ public class ComparsionUtils {
 	}
 	
 	public static String digest(String filename) throws Exception {
-		int pg = PlacementCalculator.calculate(filename);
+		int pg = PlacementCalculator.calculate(filename, pgQuantity);
 		int psdid = pg < 4 ? 0 : 1;
 		File file = new File(FileUtils.joinPath(SimplePsdServer.getStoragePath(), 
 				"psd" + String.valueOf(psdid), String.valueOf(pg), filename));

@@ -10,7 +10,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,34 +17,17 @@ import org.slf4j.LoggerFactory;
 import net.threeple.pg.api.exception.ClusterUnhealthyException;
 import net.threeple.pg.shared.config.ClusterMoniterFactory;
 import net.threeple.pg.shared.util.CustomInetAddressParser;
+import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class ClusterViewWatcher implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(ClusterViewWatcher.class);
 	private InetSocketAddress[] psdAddrs;
 	private Integer[] placements;
-	private static ClusterViewWatcher instance;
-	private int port = 6655;
-	private final ReentrantLock lock = new ReentrantLock();
+	private int port;
+	private volatile boolean initiated;
+	private int pgQuantity;
 	
-	static {
-		instance = new ClusterViewWatcher();
-		Thread thread = new Thread(instance, "Cluster-View-Watcher-Thread");
-		thread.setDaemon(true);
-		thread.start();
-	}
-	
-	public synchronized static ClusterViewWatcher getInstance() {
-		return instance;
-	}
-	
-	public InetSocketAddress getPsdAddress(int placement) throws InterruptedException, ClusterUnhealthyException {
-		int count = 0;
-		while(((placements == null) || (placements.length == 0)) 
-				&& (count < 100)) {
-			logger.info("尚未获得集群视图，请稍等片刻");
-			Thread.sleep(10);
-			count++;
-		}
+	private InetSocketAddress getPsdAddress(int placement) throws ClusterUnhealthyException {
 		int pid = placements[placement];
 		InetSocketAddress address = this.psdAddrs[pid];
 		if(address == null) {
@@ -57,8 +39,33 @@ public class ClusterViewWatcher implements Runnable {
 		
 	}
 	
-	public Socket getPsdConnection(int placement) 
+	private int getPlacementQuantity() {
+		if(this.pgQuantity <= 0) {
+			if(!this.initiated) {
+				waitInit();
+			}
+			this.pgQuantity = placements.length;
+		}
+		return this.pgQuantity;
+	}
+	
+	private void waitInit() {
+		int count = 0;
+		while(((placements == null) || (placements.length == 0)) 
+				&& (count < 100)) {
+			logger.info("尚未获得集群视图，请稍等片刻");
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+			}
+			count++;
+		}
+		this.initiated = true;
+	}
+	
+	public Socket getPsdConnection(String uri) 
 			throws InterruptedException, ClusterUnhealthyException, IOException {
+		int placement = PlacementCalculator.calculate(uri, getPlacementQuantity());
 		Socket socket = new Socket();
 		InetSocketAddress address = getPsdAddress(placement);
 		socket.connect(address, 5 * 1000);
@@ -68,6 +75,7 @@ public class ClusterViewWatcher implements Runnable {
 	
 	@Override
 	public void run() {
+		logger.info("哨兵线程启动");
 		ServerSocket server = null;
 		try {
 			server = new ServerSocket();
@@ -84,14 +92,8 @@ public class ClusterViewWatcher implements Runnable {
 			require(ClusterMoniterFactory.getFirstUseableConnection()); // 向集群监视器申请集群视图信息
 			while(true) {
 				Socket socket = server.accept();
-				try {
-					lock.lock();
-					response(socket); // 接收集群监视器发回的集群视图信息
-					logger.info("哨兵完成同步集群视图的工作");
-				} finally {
-					lock.unlock();
-				}
-				
+				response(socket); // 接收集群监视器发回的集群视图信息
+				logger.info("哨兵完成同步集群视图的工作");
 			}
 		} catch (IOException e) {
 			logger.error("哨兵启动失败，错误信息:{}", e.getMessage());

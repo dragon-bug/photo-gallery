@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.async.SimpleFuture;
+import net.threeple.pg.api.cluster.ClusterViewWatcher;
 import net.threeple.pg.api.model.IRequest;
 import net.threeple.pg.api.model.FileRequest;
 import net.threeple.pg.api.model.Response;
@@ -28,12 +29,16 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 	private AtomicInteger busyThreshold;
 	private AtomicInteger workerCount;
 	private final ReentrantLock lock = new ReentrantLock();
+	private ClusterViewWatcher watcher = new ClusterViewWatcher();
 	
 	private AsyncPhotoStorage() {
 		this.queue = new ArrayBlockingQueue<>(MAX_JOBS_QUANTITY);
 		this.executor = Executors.newCachedThreadPool();
 		this.busyThreshold = new AtomicInteger(DEFAULT_BUSY_THRESHOLD);
 		this.workerCount = new AtomicInteger(0);
+		Thread thread = new Thread(watcher, "Cluster-View-Watcher-Thread");
+		thread.setDaemon(true);
+		thread.start();
 	}
 	
 	@Override
@@ -48,7 +53,6 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		request.setUri(uri);
 		Future<Response> future = new SimpleFuture();
 		request.setFuture(future);
-		logger.info("完成组装文件{}的下载请求，准备放入工作队列", uri);
 		try {
 			lock.lock();
 			this.queue.offer(request, 1, TimeUnit.SECONDS);
@@ -63,6 +67,10 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		
 		return future;
 	}
+	
+	public ClusterViewWatcher getWatcher() {
+		return this.watcher;
+	}
 
 	@Override
 	public Future<Response> asyncUpload(String uri, byte[] body) {
@@ -72,7 +80,6 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		request.setBody(body);
 		Future<Response> future = new SimpleFuture();
 		request.setFuture(future);
-		logger.info("完成组装文件{}的上传请求，准备放入工作队列", uri);
 		try {
 			lock.lock();
 			this.queue.offer(request, 1, TimeUnit.SECONDS);
@@ -95,7 +102,6 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		request.setUri(uri);
 		Future<Response> future = new SimpleFuture();
 		request.setFuture(future);
-		logger.info("完成组装文件{}的删除请求，准备放入工作队列", uri);
 		try {
 			lock.lock();
 			this.queue.offer(request, 1, TimeUnit.SECONDS);
@@ -111,20 +117,14 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 	}
 
 	private void ring() {
-		try {
-			lock.lock();
-			if(this.workerCount.get() > 0) {
-				if (this.queue.size() > this.busyThreshold.get()) {
-					logger.info("工作太忙,添个工人帮忙...");
-					this.busyThreshold.getAndAdd(STEP);
-					createWorker();
-				}
-			} else { // 没有正在工作的工人
-				logger.info("缺少工作的工人，请一个...");
+		if(this.workerCount.get() > 0) {
+			if (this.queue.size() > this.busyThreshold.get()) {
+				logger.info("工作太忙,添个工人帮忙...");
+				this.busyThreshold.getAndAdd(STEP);
 				createWorker();
 			}
-		} finally {
-			lock.unlock();
+		} else { // 没有正在工作的工人
+			createWorker();
 		}
 	}
 	
