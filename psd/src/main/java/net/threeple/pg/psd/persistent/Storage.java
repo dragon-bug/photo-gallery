@@ -5,8 +5,9 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.threeple.pg.psd.health.Heartbeat;
 import net.threeple.pg.psd.io.FileOperation;
-import net.threeple.pg.psd.monitor.Heartbeat;
+import net.threeple.pg.shared.config.ClusterConfig;
 import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class Storage implements FileOperation {
@@ -63,9 +64,10 @@ public class Storage implements FileOperation {
 	}
 
 	private class PlacementGroupFactory {
+		private int pgQuantity = ClusterConfig.getPlacementGroupQuantity();
 		
 		public PlacementGroup create(String uri) {
-			int placement = PlacementCalculator.calculate(uri);
+			int placement = PlacementCalculator.calculate(uri, this.pgQuantity);
 			return new PlacementGroup(placement, root);
 		}
 	}

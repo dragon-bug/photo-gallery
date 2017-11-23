@@ -21,10 +21,13 @@ public class ClusterViewWatcherTest {
 	
 	@Test
 	public void testGetPsdAddress() throws Exception {
-		ClusterViewWatcher cvService = ClusterViewWatcher.getInstance();
+		ClusterViewWatcher watcher = new ClusterViewWatcher();
+		Thread thread = new Thread(watcher, "Cluster-View-Watcher-Thread");
+		thread.setDaemon(true);
+		thread.start();
 		Thread.sleep(50);
 		for(int i = 0; i < 8; i++) {
-			InetSocketAddress address = cvService.getPsdAddress(i);
+			InetSocketAddress address = watcher.getPsdAddress(i);
 			if(i < 4) {
 				assertTrue(address.getPort() > 0);
 			} else {

@@ -22,26 +22,28 @@ import net.threeple.pg.shared.util.PlacementCalculator;
 public class Porter implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(Porter.class);
 	private final static int POLL_TIMEOUT = 100;
-	private BlockingQueue<IRequest> queue;
-	private AsyncPhotoStorage photoStorage;
+	private final BlockingQueue<IRequest> queue;
+	private final AsyncPhotoStorage photoStorage;
+	private final int id;
+	private final ClusterViewWatcher watcher;
+	private final int pgQuantity;
 	private static AtomicInteger instanceCounter = new AtomicInteger();
-	private int id;
 	
 	public Porter(AsyncPhotoStorage _photoStorage) {
 		this.photoStorage = _photoStorage;
 		this.queue = _photoStorage.getQueue();
 		this.id = instanceCounter.getAndIncrement();
+		this.watcher = _photoStorage.getWatcher();
+		this.pgQuantity = watcher.getPlacementQuantity();
 		logger.info("工人#{}被唤醒", this.id);
 	}
 
 	@Override
 	public void run() {
-		ClusterViewWatcher watcher = ClusterViewWatcher.getInstance();
-		logger.debug("获得集群视图哨兵实例");
-		
 		long start = System.currentTimeMillis();
 		int quantity = 0;
 		
+		// 创建责任链
 		Handler downloadHandler = new DownloadHandler();
 		Handler uploadHandler = new UploadHandler();
 		Handler deleteHandler = new DeleteHandler();
@@ -57,7 +59,7 @@ public class Porter implements Runnable {
 				Socket socket = new Socket();
 				request.setSocket(socket);
 				try {
-					int placement = PlacementCalculator.calculate(uri);
+					int placement = PlacementCalculator.calculate(uri, this.pgQuantity);
 					logger.debug("获得文件{}的归置：{}", uri, placement);
 					
 					InetSocketAddress address = watcher.getPsdAddress(placement);

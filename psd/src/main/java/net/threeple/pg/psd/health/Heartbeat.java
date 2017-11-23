@@ -1,4 +1,4 @@
-package net.threeple.pg.psd.monitor;
+package net.threeple.pg.psd.health;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -34,7 +34,7 @@ public class Heartbeat implements Runnable {
 	
 	@Override
 	public void run() {
-		logger.info("存储节点#{}发送心跳包的线程启动", this.id);
+		logger.info("存储节点#{}心跳包线程启动", this.id);
 		DatagramSocket socket = null;
 		try {
 			socket = new DatagramSocket();

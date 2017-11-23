@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.api.async.SimpleFuture;
+import net.threeple.pg.api.cluster.ClusterViewWatcher;
 import net.threeple.pg.api.model.IRequest;
 import net.threeple.pg.api.model.FileRequest;
 import net.threeple.pg.api.model.Response;
@@ -28,12 +29,16 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 	private AtomicInteger busyThreshold;
 	private AtomicInteger workerCount;
 	private final ReentrantLock lock = new ReentrantLock();
+	private ClusterViewWatcher watcher = new ClusterViewWatcher();
 	
 	private AsyncPhotoStorage() {
 		this.queue = new ArrayBlockingQueue<>(MAX_JOBS_QUANTITY);
 		this.executor = Executors.newCachedThreadPool();
 		this.busyThreshold = new AtomicInteger(DEFAULT_BUSY_THRESHOLD);
 		this.workerCount = new AtomicInteger(0);
+		Thread thread = new Thread(watcher, "Cluster-View-Watcher-Thread");
+		thread.setDaemon(true);
+		thread.start();
 	}
 	
 	@Override
@@ -62,6 +67,10 @@ public class AsyncPhotoStorage extends AbstractPhotoStorage {
 		}
 		
 		return future;
+	}
+	
+	public ClusterViewWatcher getWatcher() {
+		return this.watcher;
 	}
 
 	@Override

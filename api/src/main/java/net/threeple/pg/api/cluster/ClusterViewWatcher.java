@@ -23,28 +23,13 @@ public class ClusterViewWatcher implements Runnable {
 	final Logger logger = LoggerFactory.getLogger(ClusterViewWatcher.class);
 	private InetSocketAddress[] psdAddrs;
 	private Integer[] placements;
-	private static ClusterViewWatcher instance;
-	private int port = 6655;
+	private int port;
 	private final ReentrantLock lock = new ReentrantLock();
+	private volatile boolean initiated;
 	
-	static {
-		instance = new ClusterViewWatcher();
-		Thread thread = new Thread(instance, "Cluster-View-Watcher-Thread");
-		thread.setDaemon(true);
-		thread.start();
-	}
-	
-	public synchronized static ClusterViewWatcher getInstance() {
-		return instance;
-	}
-	
-	public InetSocketAddress getPsdAddress(int placement) throws InterruptedException, ClusterUnhealthyException {
-		int count = 0;
-		while(((placements == null) || (placements.length == 0)) 
-				&& (count < 100)) {
-			logger.info("尚未获得集群视图，请稍等片刻");
-			Thread.sleep(10);
-			count++;
+	public InetSocketAddress getPsdAddress(int placement) throws ClusterUnhealthyException {
+		if(!this.initiated) {
+			waitInit();
 		}
 		int pid = placements[placement];
 		InetSocketAddress address = this.psdAddrs[pid];
@@ -55,6 +40,27 @@ public class ClusterViewWatcher implements Runnable {
 		logger.debug("获得归置组#{}寄宿的存储节点地址：{}", placement, address);
 		return address;
 		
+	}
+	
+	public int getPlacementQuantity() {
+		if(!this.initiated) {
+			waitInit();
+		}
+		return placements.length;
+	}
+	
+	private void waitInit() {
+		int count = 0;
+		while(((placements == null) || (placements.length == 0)) 
+				&& (count < 100)) {
+			logger.info("尚未获得集群视图，请稍等片刻");
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+			}
+			count++;
+		}
+		this.initiated = true;
 	}
 	
 	public Socket getPsdConnection(int placement) 
@@ -68,6 +74,7 @@ public class ClusterViewWatcher implements Runnable {
 	
 	@Override
 	public void run() {
+		logger.info("哨兵线程启动");
 		ServerSocket server = null;
 		try {
 			server = new ServerSocket();
