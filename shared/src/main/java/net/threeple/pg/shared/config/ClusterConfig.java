@@ -38,4 +38,9 @@ public class ClusterConfig {
 	public static int getPlacementGroupQuantity() {
 		return Integer.parseInt(prop.getProperty("placement_group_quantity"));
 	}
+	
+	public static int getDuplicates() {
+		return Integer.parseInt(prop.getProperty("duplicates"));
+	}
+	
 }
