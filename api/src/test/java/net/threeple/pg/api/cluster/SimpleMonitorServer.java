@@ -1,31 +1,32 @@
 package net.threeple.pg.api.cluster;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 
-import net.threeple.pg.mon.MonitorServer;
-import net.threeple.pg.mon.health.HealthChecker;
-import net.threeple.pg.mon.health.HeartbeatMonitor;
+import net.threeple.pg.mon.Bootstrap;
 
 public class SimpleMonitorServer {
 	
 	public static void start() throws Exception {
-		InetAddress address = InetAddress.getByName("127.0.0.1");
 		
 		Thread thread = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
-				MonitorServer server = new MonitorServer("mon0", address, 6661);
-				server.start();
+				InetAddress address = null;
+				try {
+					address = InetAddress.getByName("127.0.0.1");
+				} catch (UnknownHostException e) {
+					e.printStackTrace();
+				}
+				Bootstrap bootstrap = new Bootstrap();
+				bootstrap.load();
+				bootstrap.boot("mon0", 6661, address);
+				
 			}
 			
-		}, "Simple-Monitor-Server-Thread");
+		}, "Simple-Monitor-Thread");
 		thread.setDaemon(true);
 		thread.start();
-		
-		HealthChecker hc = new HealthChecker();
-		Thread hthread = new Thread(new HeartbeatMonitor(address, hc), "Heartbeat-Monitor-Thread");
-		hthread.setDaemon(true);
-		hthread.start();
 	}
 }
