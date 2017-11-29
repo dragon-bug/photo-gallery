@@ -12,35 +12,62 @@ import net.threeple.pg.shared.util.FileUtils;
 
 public class ApplicationConfig {
 	final static Logger logger = LoggerFactory.getLogger(ApplicationConfig.class);
-	private static Properties prop = new Properties();
+	private static Properties props = new Properties();
+	private static long loadTime;
 	
-	static {
+	private static void load() {
 		String path = FileUtils.joinPath(System.getProperty("user.home"), "pg.conf");
 		File file = new File(path);
 		if(!file.exists()) {
 			file = new File("/etc/photo-gallery/pg.conf");
 		}
-		if(file.exists()) {
-			try {
-				prop.load(new FileInputStream(file));
-			} catch (IOException e) {
-				logger.error("无法装载配置文件pg.conf，错误信息：{}", e.getMessage());
+		if(loadTime < file.lastModified()) {
+			if(file.exists()) {
+				try {
+					props.load(new FileInputStream(file));
+				} catch (IOException e) {
+					logger.error("无法装载配置文件pg.conf，错误信息：{}", e.getMessage());
+				}
+				loadTime = file.lastModified();
+			} else {
+				logger.error("配置文件pg.conf不存在");
 			}
-		} else {
-			logger.error("配置文件pg.conf不存在");
 		}
 	}
 	
 	public static String getMonitorAddresses() {
-		return prop.getProperty("monitors");
+		load();
+		return props.getProperty("monitors");
 	}
 	
 	public static int getPlacementGroupQuantity() {
-		return Integer.parseInt(prop.getProperty("placement_group_quantity"));
+		load();
+		return Integer.parseInt(props.getProperty("placement_group_quantity"));
 	}
 	
 	public static int getDuplicates() {
-		return Integer.parseInt(prop.getProperty("duplicates"));
+		load();
+		return Integer.parseInt(props.getProperty("duplicates"));
+	}
+	
+	public static String getSmtpHost() {
+		load();
+		return props.getProperty("smtp_host");
+	}
+	
+	public static String getSmtpUsername() {
+		load();
+		return props.getProperty("smtp_username");
+	}
+	
+	public static String getSmtpPassword() {
+		load();
+		return props.getProperty("smtp_password");
+	}
+	
+	public static String getAdminEmail() {
+		load();
+		return props.getProperty("admin_email");
 	}
 	
 }
