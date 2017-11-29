@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import net.threeple.pg.shared.util.FileUtils;
 
-public class ClusterConfig {
-	final static Logger logger = LoggerFactory.getLogger(ClusterConfig.class);
+public class ApplicationConfig {
+	final static Logger logger = LoggerFactory.getLogger(ApplicationConfig.class);
 	private static Properties prop = new Properties();
 	
 	static {
