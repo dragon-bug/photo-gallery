@@ -70,4 +70,9 @@ public class ApplicationConfig {
 		return props.getProperty("admin_email");
 	}
 	
+	public static String getClusterName() {
+		load();
+		return props.getProperty("cluster_name");
+	}
+	
 }
