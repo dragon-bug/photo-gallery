@@ -61,9 +61,18 @@ subprojects{
 }
 
 project(':admin') {
+	apply plugin: 'application'
+	
+	mainClassName = "net.threeple.pg.adm.Admin"
+
+	distributions {
+		main {
+			baseName = "$rootProject.name-$project.name"
+		}
+	}
+
 	dependencies {
-		testImplementation project(':psd')
-		testImplementation project(':mon')
+		implementation project(':shared')
 	}
 }
 
