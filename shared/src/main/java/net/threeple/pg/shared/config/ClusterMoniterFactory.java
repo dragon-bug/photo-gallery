@@ -15,7 +15,7 @@ public class ClusterMoniterFactory {
 	private static String getAddresses() throws IOException {
 		String monAddrs = System.getenv("PG_MONITORS");
 		if(monAddrs == null) {
-			monAddrs = ClusterConfig.getMonitorAddresses();
+			monAddrs = ApplicationConfig.getMonitorAddresses();
 			logger.info("从配置文件获得监视器配置：{}", monAddrs);
 		} else {
 			logger.info("从环境变量获得监视器配置：{}", monAddrs);

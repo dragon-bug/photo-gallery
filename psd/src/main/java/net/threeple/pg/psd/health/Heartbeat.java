@@ -10,7 +10,7 @@ import java.net.UnknownHostException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.threeple.pg.shared.config.ClusterConfig;
+import net.threeple.pg.shared.config.ApplicationConfig;
 import net.threeple.pg.shared.util.NumberUtils;
 
 public class Heartbeat implements Runnable {
@@ -23,7 +23,7 @@ public class Heartbeat implements Runnable {
 	
 	private InetAddress getMonitorAddress() throws UnknownHostException {
 		InetAddress addr = null;
-		String as = ClusterConfig.getMonitorAddresses();
+		String as = ApplicationConfig.getMonitorAddresses();
 		int index = as.indexOf(',');
 		as = (index > 0) ? as.substring(0, index) : as;
 		index = as.indexOf(':');

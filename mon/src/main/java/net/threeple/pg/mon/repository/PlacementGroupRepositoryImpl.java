@@ -10,7 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.threeple.pg.shared.config.ClusterConfig;
+import net.threeple.pg.shared.config.ApplicationConfig;
 import net.threeple.pg.shared.util.FileUtils;
 
 public class PlacementGroupRepositoryImpl implements PlacementGroupRepository {
@@ -45,7 +45,7 @@ public class PlacementGroupRepositoryImpl implements PlacementGroupRepository {
 		} else {
 			load();
 			this.raFile.seek(0);
-			int length = ClusterConfig.getPlacementGroupQuantity();
+			int length = ApplicationConfig.getPlacementGroupQuantity();
 			int[] pgMap = new int[length];
 			for(int i = 0; i < length; i++) {
 				pgMap[i] = this.raFile.readInt();

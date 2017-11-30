@@ -7,12 +7,12 @@ import java.security.MessageDigest;
 
 import org.apache.commons.codec.binary.Hex;
 
-import net.threeple.pg.shared.config.ClusterConfig;
+import net.threeple.pg.shared.config.ApplicationConfig;
 import net.threeple.pg.shared.util.FileUtils;
 import net.threeple.pg.shared.util.PlacementCalculator;
 
 public class ComparsionUtils {
-	private static int pgQuantity = ClusterConfig.getPlacementGroupQuantity(); 
+	private static int pgQuantity = ApplicationConfig.getPlacementGroupQuantity(); 
 	
 	public static String digest(byte[] data) throws Exception {
 		MessageDigest md = MessageDigest.getInstance("MD5");

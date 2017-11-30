@@ -7,7 +7,7 @@
  */
  allprojects {
  	group "net.threeple.pg"
- 	version "0.6.821"
+ 	version "0.6.819"
  }
 
 subprojects{
@@ -157,6 +157,10 @@ project(':shared') {
 	            from components.java
 	        }
 	    }
+	}
+
+	dependencies {
+		implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.0';
 	}
 }
 
