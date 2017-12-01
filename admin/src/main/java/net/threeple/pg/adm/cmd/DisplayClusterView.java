@@ -41,9 +41,12 @@ public class DisplayClusterView {
 		String line = null;
 		logger.info("正在从监视器获得集群视图...");
 		while((line = reader.readLine()) != null) {
+			if("End".equals(line)) {
+				break;
+			}
 			logger.info(line);
 		}
-		
+		logger.info("完成");
 		socket.close();
 	}
 	
