@@ -63,7 +63,7 @@ subprojects{
 project(':admin') {
 	apply plugin: 'application'
 	
-	mainClassName = "net.threeple.pg.adm.Admin"
+	mainClassName = "net.threeple.pg.adm.PhotoGalleryController"
 
 	distributions {
 		main {
