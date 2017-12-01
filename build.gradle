@@ -7,7 +7,7 @@
  */
  allprojects {
  	group "net.threeple.pg"
- 	version "0.6.824"
+ 	version "0.6.23"
  }
 
 subprojects{
@@ -61,9 +61,19 @@ subprojects{
 }
 
 project(':admin') {
+	apply plugin: 'application'
+	
+	mainClassName = "net.threeple.pg.adm.PhotoGalleryController"
+
+	distributions {
+		main {
+			baseName = "$rootProject.name-$project.name"
+		}
+	}
+
 	dependencies {
-		testImplementation project(':psd')
-		testImplementation project(':mon')
+		implementation project(':shared')
+		implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 	}
 }
 
