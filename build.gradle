@@ -73,6 +73,7 @@ project(':admin') {
 
 	dependencies {
 		implementation project(':shared')
+		implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 	}
 }
 
