@@ -1,4 +1,4 @@
-package net.threeple.pg.adm.resource;
+package net.threeple.pg.adm.cmd;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
