@@ -53,6 +53,22 @@ public class ClientResponse {
 			out.flush();
 		} catch (IOException e) {
 			logger.error("响应客户{}请求失败, 错误信息: {}", this.request.getOperation(), e.getMessage());
-		} 
+		} finally {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+			}
+			if(this.socket != null) {
+				if(!this.socket.isClosed()) {
+					try {
+						this.socket.close();
+					} catch (IOException e) {
+						logger.error("套接字未正常关闭");
+					}
+					this.socket = null;
+					logger.info("套接字已经正常关闭");
+				}
+			}
+		}
 	}
 }

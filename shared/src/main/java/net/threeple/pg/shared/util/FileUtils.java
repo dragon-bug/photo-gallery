@@ -21,16 +21,19 @@ public class FileUtils {
 	
 	private static byte[] read(FileInputStream in) throws IOException {
 		BufferedInputStream bufIn = new BufferedInputStream(in);
-		
 		byte[] result = new byte[0];
 		byte[] buffer = new byte[1024 * 10];
 		int total = 0;
-		while((total = bufIn.read(buffer)) > 0) {
-			int ol = result.length;
-			result = Arrays.copyOf(result, ol + total);
-			System.arraycopy(buffer, 0, result, ol, total);
+		try {
+			while((total = bufIn.read(buffer)) > 0) {
+				int ol = result.length;
+				result = Arrays.copyOf(result, ol + total);
+				System.arraycopy(buffer, 0, result, ol, total);
+			}
+		} finally {
+			bufIn.close();
 		}
-		bufIn.close();
+		
 		return  result;
 	}
 	
@@ -39,24 +42,27 @@ public class FileUtils {
 			throw new IOException("图片信息为空");
 		}
 		File file = new File(uri);
-		
-		File parent = file.getParentFile();
-		if(!parent.exists()) {
-			parent.setReadable(true);
-			parent.setWritable(true, true);
-			parent.setExecutable(true);
-			parent.mkdirs();
-		} else if(!parent.isDirectory()){
-			throw new IOException("预计为目录,实际是文件");
+		BufferedOutputStream bufOut = null;
+		try {
+			File parent = file.getParentFile();
+			if(!parent.exists()) {
+				parent.setReadable(true);
+				parent.setWritable(true, true);
+				parent.setExecutable(true);
+				parent.mkdirs();
+			} else if(!parent.isDirectory()){
+				throw new IOException("预计为目录,实际是文件");
+			}
+			
+			file.setReadable(true);
+			file.setWritable(true, true);
+			FileOutputStream fileOut = new FileOutputStream(file);
+			bufOut = new BufferedOutputStream(fileOut);
+			bufOut.write(body);
+			bufOut.flush();
+		} finally {
+			bufOut.close();
 		}
-		
-		file.setReadable(true);
-		file.setWritable(true, true);
-		FileOutputStream fileOut = new FileOutputStream(file);
-		BufferedOutputStream bufOut = new BufferedOutputStream(fileOut);
-		bufOut.write(body);
-		bufOut.flush();
-		bufOut.close();
 	}
 	
 	public static String joinPath(String...strings) {
