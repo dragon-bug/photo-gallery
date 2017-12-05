@@ -19,9 +19,8 @@ public class SimpleMonitorServer {
 				} catch (UnknownHostException e) {
 					e.printStackTrace();
 				}
-				Bootstrap bootstrap = new Bootstrap();
-				bootstrap.load();
-				bootstrap.boot("mon0", 6661, address);
+				Bootstrap bootstrap = new Bootstrap("mon0", address, 6661);
+				bootstrap.boot();
 				
 			}
 			
