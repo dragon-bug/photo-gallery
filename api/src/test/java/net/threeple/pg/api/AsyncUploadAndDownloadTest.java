@@ -34,15 +34,15 @@ public class AsyncUploadAndDownloadTest {
 	@Before
 	public void prepare() throws Exception {
 		URL url = this.getClass().getClassLoader().getResource("test.properties");
-		Properties prpe = new Properties();
-		prpe.load(new FileInputStream(url.getPath()));
+		Properties prope = new Properties();
+		prope.load(new FileInputStream(url.getPath()));
 		
-		String server = prpe.getProperty("server");
+		String server = prope.getProperty("server");
 		if("inner".equals(server)) {
 			SimpleMonitorServer.start();
 			SimplePsdServer.start();
 		}
-		
+		this.threadQuantity = Integer.parseInt(prope.getProperty("thread_quantity", "3"));
 		this.uploader = PhotoStorageFactory.getPhotoStorage(false);
 		this.downloader = PhotoStorageFactory.getPhotoStorage(false);
 		
@@ -51,7 +51,6 @@ public class AsyncUploadAndDownloadTest {
 	
 	@Test
 	public void testUploadAndDownload() throws Exception {
-		int threadQuantity = 3;
 		CountDownLatch begin = new CountDownLatch(1);
 		CountDownLatch end = new CountDownLatch(threadQuantity * 2);
 		
