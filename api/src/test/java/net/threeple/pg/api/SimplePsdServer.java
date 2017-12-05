@@ -1,10 +1,16 @@
 package net.threeple.pg.api;
 
-import net.threeple.pg.psd.PsdServer;
-import net.threeple.pg.psd.persistent.Storage;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import net.threeple.pg.psd.Bootstrap;
 import net.threeple.pg.shared.util.FileUtils;
 
 public class SimplePsdServer {
+	final Logger logger = LoggerFactory.getLogger(SimplePsdServer.class);
 	public static void start() throws Exception {
 		final int port = 6678;
 		
@@ -14,10 +20,16 @@ public class SimplePsdServer {
 
 				@Override
 				public void run() {
-					Storage storage = new Storage(id, FileUtils.joinPath(SimplePsdServer.getStoragePath(), "\\psd" + id));
-					
-					PsdServer server = new PsdServer(storage);
-					server.startup("127.0.0.1", port + id);
+					Bootstrap bootstrap = new Bootstrap();
+					bootstrap.setStorage(id, FileUtils.joinPath(SimplePsdServer.getStoragePath(), "\\psd" + id));
+					bootstrap.setPort(port + id);
+					try {
+						bootstrap.setAddress(InetAddress.getByName("127.0.0.1"));
+					} catch (UnknownHostException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					bootstrap.boot();
 					
 				}
 				
