@@ -38,60 +38,50 @@ public class StorageNode {
 		this.address = address;
 	}
 	
-	public void setIn() {
-		if(isIn()) {
+	private void setStatus(byte status, byte reverse) {
+		if(hasStatus(status)) {
 			return;
 		}
-		if((this.stateCode & OUT) == OUT) {
-			this.stateCode -= OUT;
+		if(hasStatus(reverse)) {
+			this.stateCode -= reverse;
 		}
-		this.stateCode += IN;
+		this.stateCode += status;
+	}
+	
+	private boolean hasStatus(byte status) {
+		return (this.stateCode & status) == status;
+	}
+	
+	public void setIn() {
+		setStatus(IN, OUT);
 	}
 	
 	public boolean isIn() {
-		return (this.stateCode & IN) == IN;
+		return hasStatus(IN);
 	}
 	
 	public void setOut() {
-		if(isOut()) {
-			return;
-		}
-		if((this.stateCode & IN) == IN) {
-			this.stateCode -= IN;
-		}
-		this.stateCode += OUT;
+		setStatus(OUT, IN);
 	}
 	
 	public boolean isOut() {
-		return (this.stateCode & OUT) == OUT;
+		return hasStatus(OUT);
 	}
 	
 	public void setUp() {
-		if(isUp()) {
-			return;
-		}
-		if((this.stateCode & DOWN) == DOWN) {
-			this.stateCode -= DOWN;
-		}
-		this.stateCode += UP;
+		setStatus(UP, DOWN);
 	}
 	
 	public boolean isUp() {
-		return (this.stateCode & UP) == UP;
+		return hasStatus(UP);
 	}
 	
 	public void setDown() {
-		if(isDown()) {
-			return;
-		}
-		if((this.stateCode & UP) == UP) {
-			this.stateCode -= UP;
-		}
-		this.stateCode += DOWN;
+		setStatus(DOWN, UP);
 	}
 	
 	public boolean isDown() {
-		return (this.stateCode & DOWN) == DOWN;
+		return hasStatus(DOWN);
 	}
 
 	public int[] getPgs() {
