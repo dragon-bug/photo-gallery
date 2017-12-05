@@ -113,7 +113,20 @@ project(':mon') {
 	apply plugin: 'application'
 
 	mainClassName = "net.threeple.pg.mon.Bootstrap"
-
+	
+	applicationDefaultJvmArgs = [
+		"-Xmx4000m",
+		"-XX:+HeapDumpOnOutOfMemoryError",
+		"-XX:HeapDumpPath=/var/log/photo-gallery",
+		"-XX:+PrintGCDetails",
+		"-XX:+PrintGCTimeStamps",
+		"-XX:+PrintGCDateStamps",
+		"-Xloggc:/var/log/photo-gallery/gc.log",
+		"-XX:+UseGCLogFileRotation",
+		"-XX:NumberOfGCLogFiles=500",
+		"-XX:GCLogFileSize=1024000"
+	]
+	
 	distributions {
 		main {
 			baseName = "$rootProject.name-$project.name"
@@ -130,7 +143,20 @@ project(':psd') {
 	apply plugin: 'application'
 
 	mainClassName = "net.threeple.pg.psd.Bootstrap"
-
+	
+	applicationDefaultJvmArgs = [
+		"-Xmx4000m",
+		"-XX:+HeapDumpOnOutOfMemoryError",
+		"-XX:HeapDumpPath=/var/log/photo-gallery",
+		"-XX:+PrintGCDetails",
+		"-XX:+PrintGCTimeStamps",
+		"-XX:+PrintGCDateStamps",
+		"-Xloggc:/var/log/photo-gallery/gc.log",
+		"-XX:+UseGCLogFileRotation",
+		"-XX:NumberOfGCLogFiles=500",
+		"-XX:GCLogFileSize=1024000"
+	]
+	
 	distributions {
 		main {
 			baseName = "$rootProject.name-$project.name"
