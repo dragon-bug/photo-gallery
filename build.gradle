@@ -121,7 +121,7 @@ project(':mon') {
 		"-XX:+PrintGCDetails",
 		"-XX:+PrintGCTimeStamps",
 		"-XX:+PrintGCDateStamps",
-		"-Xloggc:/var/log/photo-gallery/gc.log",
+		"-Xloggc:/var/log/photo-gallery/mon-%p-gc.log",
 		"-XX:+UseGCLogFileRotation",
 		"-XX:NumberOfGCLogFiles=500",
 		"-XX:GCLogFileSize=1024000"
@@ -151,7 +151,7 @@ project(':psd') {
 		"-XX:+PrintGCDetails",
 		"-XX:+PrintGCTimeStamps",
 		"-XX:+PrintGCDateStamps",
-		"-Xloggc:/var/log/photo-gallery/gc.log",
+		"-Xloggc:/var/log/photo-gallery/psd-%p-gc.log",
 		"-XX:+UseGCLogFileRotation",
 		"-XX:NumberOfGCLogFiles=500",
 		"-XX:GCLogFileSize=1024000"
